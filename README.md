@@ -37,6 +37,7 @@ This repository contains a scholarship management system with separate backend a
    npm start
    ```
 7. Confirm the backend runs successfully and listens on port `5000`.
+   - If login fails with "endpoint not found," restart the backend and make sure the server is running before opening the frontend.
 
 ### 3. Start the frontend
 1. Open another terminal.
