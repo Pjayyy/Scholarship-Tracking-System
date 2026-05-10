@@ -1,0 +1,106 @@
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: #f4f6f9;
+}
+
+a {
+  text-decoration: none;
+}
+
+/* Layout */
+.app-container {
+  display: flex;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 240px;
+  height: 100vh;
+  background: #111827;
+  color: white;
+  padding: 20px;
+  position: fixed;
+}
+
+.sidebar h2 {
+  color: #fff;
+  font-size: 18px;
+  margin-bottom: 30px;
+}
+
+.sidebar a {
+  display: block;
+  padding: 10px;
+  margin: 5px 0;
+  color: #cbd5e1;
+  border-radius: 8px;
+}
+
+.sidebar a:hover {
+  background: #1f2937;
+  color: white;
+}
+
+/* Main Content */
+.main {
+  margin-left: 240px;
+  padding: 20px;
+  width: 100%;
+}
+
+/* Cards */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+
+.card h3 {
+  margin: 0;
+  color: #6b7280;
+}
+
+.card h1 {
+  margin: 10px 0 0;
+}
+
+/* Buttons */
+button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
+
+/* Tables */
+table {
+  width: 100%;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+th {
+  background: #111827;
+  color: white;
+  padding: 10px;
+}
+
+td {
+  padding: 10px;
+}
