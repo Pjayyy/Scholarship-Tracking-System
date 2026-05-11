@@ -4,8 +4,11 @@ import {
   FaHome,
   FaQrcode,
   FaRegChartBar,
-  FaUserGraduate,
+  FaUniversity,
   FaUser,
+  FaUserGraduate,
+  FaFileAlt,
+  FaCog,
 } from "react-icons/fa";
 
 const adminNavItems = [
@@ -18,7 +21,15 @@ const adminNavItems = [
 ];
 
 const studentNavItems = [
-  { page: "student-portal", label: "Student Portal", icon: FaUser },
+  { page: "student-dashboard", label: "Dashboard", icon: FaHome },
+  { page: "student-profile", label: "My Profile", icon: FaUser },
+  { page: "student-qr", label: "My QR Code", icon: FaQrcode },
+  { page: "student-attendance", label: "Attendance History", icon: FaRegChartBar },
+  { page: "student-forecast", label: "Forecast & Risk", icon: FaChartLine },
+  { page: "student-notifications", label: "Notifications", icon: FaBell },
+  { page: "student-scholarship", label: "Scholarship Details", icon: FaFileAlt },
+  { page: "student-documents", label: "Documents", icon: FaFileAlt },
+  { page: "student-settings", label: "Settings", icon: FaCog },
 ];
 
 function Sidebar({ page, setPage, role }) {
@@ -27,10 +38,13 @@ function Sidebar({ page, setPage, role }) {
   return (
     <div className="sidebar">
       <div className="sidebar-brand">
-        <span>🎓</span>
+        <span aria-hidden="true">
+          <FaUniversity />
+        </span>
         <div>
-          <strong>Scholarship</strong>
-          <small>Operations</small>
+          <small className="kicker">Scholarship Intelligence</small>
+          <strong>Smart Tracking</strong>
+          <small>Monitoring &amp; Analytics</small>
         </div>
       </div>
 
@@ -52,7 +66,7 @@ function Sidebar({ page, setPage, role }) {
       </nav>
 
       <div className="sidebar-footer">
-        <small>Modern dashboard UI</small>
+        <small>Real-time monitoring UI</small>
       </div>
     </div>
   );

@@ -144,7 +144,6 @@ function Login({ setUser, setToken }) {
 
             <form onSubmit={handleSubmit} noValidate>
               <div className={`input-group ${errors.username ? "has-error" : ""}`}>
-                <AiOutlineMail className="field-icon" aria-hidden="true" />
                 <input
                   id="email"
                   name="email"
@@ -161,7 +160,6 @@ function Login({ setUser, setToken }) {
               </div>
 
               <div className={`input-group ${errors.password ? "has-error" : ""}`}>
-                <AiOutlineLock className="field-icon" aria-hidden="true" />
                 <input
                   id="password"
                   name="password"
@@ -194,7 +192,7 @@ function Login({ setUser, setToken }) {
                   />
                   Remember me
                 </label>
-                <a href="#" className="forgot-link">
+                <a href="#" className="forgot-link" onClick={(e) => e.preventDefault()}>
                   Forgot password?
                 </a>
               </div>
@@ -208,12 +206,12 @@ function Login({ setUser, setToken }) {
               <span>{themeLabel}</span>
               <button
                 type="button"
-                className="password-toggle"
+                className="pill btn-ghost"
                 onClick={toggleTheme}
                 aria-label="Toggle theme"
-                style={{ padding: "0.5rem", borderRadius: "999px" }}
               >
                 {isDarkMode ? <FiSun size={18} /> : <FiMoon size={18} />}
+                {isDarkMode ? "Light Mode" : "Dark Mode"}
               </button>
             </div>
 

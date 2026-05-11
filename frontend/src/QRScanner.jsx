@@ -68,10 +68,20 @@ function QRScanner() {
   }, []);
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>QR Attendance Scanner</h2>
+    <div className="panel">
+      <section className="page-hero">
+        <div className="page-hero__row">
+          <div>
+            <div className="kicker">QR Attendance</div>
+            <div className="page-title">QR Scanner</div>
+            <div className="page-subtitle">Point the camera at a valid student QR code to record attendance.</div>
+          </div>
+        </div>
+      </section>
 
-      <div id="reader"></div>
+      <div className="card card-glass scanner-card">
+        <div id="reader" />
+      </div>
     </div>
   );
 }

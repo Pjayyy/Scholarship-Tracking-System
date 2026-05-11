@@ -17,6 +17,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import axios from "axios";
+import { FiMoon, FiSun } from "react-icons/fi";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -24,12 +25,18 @@ function App() {
   const [page, setPage] = useState("dashboard");
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
   const isStudent = user?.role === "student";
   const isAdmin = user?.role === "admin";
 
   // Load from storage + END LOADING
   useEffect(() => {
+    const savedTheme = localStorage.getItem("appTheme") || localStorage.getItem("authTheme");
+    const nextTheme = savedTheme === "light" ? "light" : "dark";
+    document.documentElement.dataset.theme = nextTheme;
+    setIsDarkMode(nextTheme !== "light");
+
     try {
       const savedUser = localStorage.getItem("user");
       const savedToken = localStorage.getItem("token");
@@ -57,11 +64,11 @@ function App() {
     if (!user) return;
 
     if (user.role === "student") {
-      setPage("student-portal");
-    } else if (user.role === "admin" && page === "student-portal") {
+      setPage("student-dashboard");
+    } else if (user.role === "admin" && page.startsWith("student-")) {
       setPage("dashboard");
     }
-  }, [user]);
+  }, [user, page]);
 
   // Save user
   useEffect(() => {
@@ -105,6 +112,13 @@ function App() {
 
   console.log("Render check - loading:", loading, "user:", !!user);
 
+  const toggleTheme = () => {
+    const next = !isDarkMode;
+    setIsDarkMode(next);
+    document.documentElement.dataset.theme = next ? "dark" : "light";
+    localStorage.setItem("appTheme", next ? "dark" : "light");
+  };
+
   return (
     <>
       <ToastContainer position="top-right" autoClose={2500} hideProgressBar={false} newestOnTop theme="dark" />
@@ -134,9 +148,13 @@ function App() {
           </div>
 
           <div className="topbar-right">
+            <button type="button" className="pill btn-ghost" onClick={toggleTheme} aria-label="Toggle theme">
+              {isDarkMode ? <FiSun /> : <FiMoon />}
+              <span>{isDarkMode ? "Light Mode" : "Dark Mode"}</span>
+            </button>
             <div className="session-pill">JWT: {token ? "Active" : "Missing"}</div>
             <button
-              className="btn logout-btn"
+              className="btn btn-ghost logout-btn"
               onClick={() => {
                 setUser(null);
                 setToken(null);
@@ -155,7 +173,7 @@ function App() {
         {page === "forecast" && isAdmin && <Forecast />}
         {page === "notifications" && isAdmin && <Notifications />}
         {page === "analytics" && isAdmin && <Analytics />}
-        {page === "student-portal" && <StudentPortal />}
+        {isStudent && <StudentPortal page={page} />}
       </div>
     </div>
   )}

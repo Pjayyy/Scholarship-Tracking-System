@@ -411,8 +411,8 @@
   gap: 1rem;
 }
 
-.stat-card,
-.timeline-card {
+.notifications-page .stat-card,
+.notifications-page .timeline-card {
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 1.35rem;
@@ -420,25 +420,25 @@
   box-shadow: 0 28px 60px rgba(15, 23, 42, 0.05);
 }
 
-.stat-card {
+.notifications-page .stat-card {
   display: grid;
   gap: 0.8rem;
 }
 
-.stat-head {
+.notifications-page .stat-head {
   display: flex;
   align-items: center;
   gap: 0.85rem;
   color: #475569;
 }
 
-.stat-head svg {
+.notifications-page .stat-head svg {
   width: 1.35rem;
   height: 1.35rem;
   color: #2563eb;
 }
 
-.stat-card strong {
+.notifications-page .stat-card strong {
   font-size: 2rem;
   color: #0f172a;
 }
@@ -528,4 +528,61 @@
   .timeline-item {
     padding: 0.95rem 1rem;
   }
+}
+
+/* Dark theme overrides */
+[data-theme='dark'] .notifications-hero,
+[data-theme='dark'] .notification-card,
+[data-theme='dark'] .timeline-card,
+[data-theme='dark'] .empty-state {
+  background: var(--surface);
+  border-color: var(--surface-border);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(var(--surface-blur));
+  -webkit-backdrop-filter: blur(var(--surface-blur));
+}
+
+[data-theme='dark'] .hero-label {
+  color: var(--primary);
+}
+
+[data-theme='dark'] .notifications-hero p,
+[data-theme='dark'] .hero-meta > div,
+[data-theme='dark'] .group-header small,
+[data-theme='dark'] .select-group label,
+[data-theme='dark'] .tab,
+[data-theme='dark'] .notification-card p,
+[data-theme='dark'] .timeline-item p {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .hero-badge,
+[data-theme='dark'] .hero-meta,
+[data-theme='dark'] .group-header,
+[data-theme='dark'] .search-group,
+[data-theme='dark'] .select-group select {
+  background: rgba(2, 6, 23, 0.18);
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+[data-theme='dark'] .hero-badge strong,
+[data-theme='dark'] .hero-meta strong,
+[data-theme='dark'] .notification-card h3,
+[data-theme='dark'] .search-input,
+[data-theme='dark'] .select-group select {
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .search-icon {
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .tab {
+  background: rgba(2, 6, 23, 0.16);
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+[data-theme='dark'] .tab.active {
+  background: var(--primary);
+  color: #00111f;
 }
