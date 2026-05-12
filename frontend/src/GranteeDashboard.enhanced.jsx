@@ -666,7 +666,7 @@ function GranteeDashboard() {
                   const scholarshipType = g.scholarship_type === "TES" ? "TES" : "TDP";
 
                   return (
-                    <AnimatePresence key={g.id} mode="wait">
+                    <AnimatePresence key={g.id}>
                       <motion.tbody
                         key={`${g.id}-content`}
                         initial={{ opacity: 0 }}

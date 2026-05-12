@@ -82,7 +82,7 @@ function StudentPortal({ page }) {
   }
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence>
       <motion.div
         key={page}
         initial={{ opacity: 0, y: 12 }}

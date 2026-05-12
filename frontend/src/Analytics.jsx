@@ -28,17 +28,30 @@ function Analytics() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [s, u, a, r] = await Promise.all([
-        API.get("/dashboard/total-students"),
-        API.get("/dashboard/total-users"),
-        API.get("/dashboard/today-attendance"),
+
+      // Backend currently exposes: GET /dashboard/stats
+      const [statsRes, forecastRes] = await Promise.allSettled([
+        API.get("/dashboard/stats"),
         API.get("/forecast"),
       ]);
 
-      setStudents(s.data.total || 0);
-      setUsers(u.data.total || 0);
-      setAttendance(a.data.total || 0);
-      setRiskData(Array.isArray(r.data) ? r.data : []);
+      if (statsRes.status === "fulfilled") {
+        setStudents(statsRes.data?.students ?? 0);
+        setUsers(statsRes.data?.users ?? 0);
+        setAttendance(statsRes.data?.attendance ?? 0);
+      } else {
+        setStudents(0);
+        setUsers(0);
+        setAttendance(0);
+      }
+
+      // /forecast may not exist yet; keep UI functional.
+      if (forecastRes.status === "fulfilled") {
+        const payload = forecastRes.data;
+        setRiskData(Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : []);
+      } else {
+        setRiskData([]);
+      }
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.message || "Failed to fetch analytics");

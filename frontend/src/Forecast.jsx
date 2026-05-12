@@ -847,7 +847,7 @@ function Forecast() {
             <motion.div className="panel-card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
               <div className="section-title"><FiTrendingUp /> Forecast Prediction Result</div>
 
-              <AnimatePresence mode="wait">
+              <AnimatePresence>
                 {prediction ? (
                   <motion.div key={prediction.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} transition={{ duration: 0.3 }}>
                     <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: 14, alignItems: "center" }}>

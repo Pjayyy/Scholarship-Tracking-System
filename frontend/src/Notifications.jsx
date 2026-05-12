@@ -418,7 +418,7 @@ function Notifications() {
             </div>
           ) : (
             <div className="notification-list">
-              <AnimatePresence mode="wait">
+              <AnimatePresence>
                 {Object.keys(groupedByCategory).map((category) => {
                   const groupItems = groupedByCategory[category];
                   const categoryMeta = categoryMap[category] || { label: "Other" };

@@ -354,12 +354,43 @@ export default function AttendanceMonitor() {
     // html5-qrcode supports pause/resume in many builds
     try {
       if (!scannerRef.current) return;
-      if (next && scannerRef.current.pause) scannerRef.current.pause();
-      if (!next && scannerRef.current.resume) scannerRef.current.resume();
+      if (next) {
+        if (scannerRef.current.pause) scannerRef.current.pause();
+      } else {
+        if (scannerRef.current.resume) scannerRef.current.resume();
+      }
     } catch {
       // ignore
     }
   };
+
+  // Stop + fully reset scanner state when leaving / explicitly stopping
+  const handleStopAndReset = async () => {
+    setScannerPaused(true);
+    setScanLoading(false);
+    setScanError("");
+    setScanResult(null);
+
+    // Cooldown + decoder spam guards
+    cooldownUntilRef.current = 0;
+    lastDecodeAtRef.current = 0;
+
+    try {
+      // clear() should stop camera + decoder loop
+      await scannerRef.current?.clear?.();
+    } catch {
+      // ignore
+    }
+
+    try {
+      // html5-qrcode may not support resume after clear in all builds
+      // so force state back to initial. Scanner will re-init on mount.
+      setScannerState("initial");
+    } catch {
+      // ignore
+    }
+  };
+
 
   const handleExportCSV = () => {
     if (!logs?.length) {
@@ -518,7 +549,18 @@ export default function AttendanceMonitor() {
                   {scannerPaused ? <FaPlay /> : <FaPause />}
                   {scannerPaused ? "Resume" : "Pause"}
                 </button>
+
+                <button
+                  className="btn btn-secondary"
+                  aria-label="Stop scanner and reset"
+                  onClick={handleStopAndReset}
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  <FaStopCircle style={{ marginRight: 6 }} />
+                  Stop
+                </button>
               </div>
+
             </div>
 
             <div className="scanner-frame" style={{ minHeight: 350 }}>
@@ -881,8 +923,9 @@ export default function AttendanceMonitor() {
               </div>
             </div>
 
-            <AnimatePresence mode="wait">
+            <AnimatePresence>
               {!scanResult ? (
+
                 <motion.div
                   className="preview-empty"
                   initial={{ opacity: 0 }}

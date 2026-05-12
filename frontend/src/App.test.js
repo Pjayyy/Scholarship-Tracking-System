@@ -1,8 +1,18 @@
-import { render, screen } from '@testing-library/react';
-import App from './App';
+import { render, screen } from "@testing-library/react";
+import App from "./App";
 
-test('renders learn react link', () => {
+test("renders Scholarship Portal login screen", () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+
+  expect(screen.getByText(/Scholarship Portal/i)).toBeInTheDocument();
+
+  // Inputs have the accessibility labels. The word "Password" also appears as a
+  // button aria-label, so query inputs specifically by their role.
+  expect(screen.getByRole("textbox", { name: /Email address/i })).toBeInTheDocument();
+
+  const passwordInput = screen.getByLabelText(/Password/i, { selector: "input#password" });
+  expect(passwordInput).toBeInTheDocument();
+
 });
+
+
