@@ -8,7 +8,7 @@ const Joi = require("joi");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const winston = require("winston");
-const db = require("./db");
+const db = require("./db.js");
 
 const app = express();
 

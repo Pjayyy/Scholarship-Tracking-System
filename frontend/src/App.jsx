@@ -63,12 +63,14 @@ function App() {
   useEffect(() => {
     if (!user) return;
 
+    // Only set the default student landing page once (after login).
+    // Do not reset page on every click.
     if (user.role === "student") {
-      setPage("student-dashboard");
+      setPage((prev) => (prev.startsWith("student-") ? prev : "student-dashboard"));
     } else if (user.role === "admin" && page.startsWith("student-")) {
       setPage("dashboard");
     }
-  }, [user, page]);
+  }, [user]);
 
   // Save user
   useEffect(() => {
