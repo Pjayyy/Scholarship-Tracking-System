@@ -197,8 +197,11 @@ CREATE TABLE IF NOT EXISTS notifications (
     risk_level ENUM(
         'SAFE',
         'WARNING',
-        'AT RISK'
+        'AT RISK',
+        'INFO'
     ),
+
+    category VARCHAR(80) NULL,
 
     is_read BOOLEAN DEFAULT FALSE,
 
@@ -206,6 +209,35 @@ CREATE TABLE IF NOT EXISTS notifications (
 
     FOREIGN KEY (student_id)
     REFERENCES students(student_id)
+);
+
+
+-- =========================================
+-- SCHOLARSHIP ANNOUNCEMENTS (e.g. Gmail ingest)
+-- =========================================
+CREATE TABLE IF NOT EXISTS scholarship_announcements (
+
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    source ENUM(
+        'gmail',
+        'manual'
+    ) NOT NULL DEFAULT 'gmail',
+
+    gmail_message_id VARCHAR(128) NULL,
+
+    title VARCHAR(512) NOT NULL,
+
+    body_text MEDIUMTEXT,
+
+    from_address VARCHAR(512),
+
+    received_at DATETIME NULL,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY uq_gmail_message (gmail_message_id)
+
 );
 
 -- =========================================
@@ -280,8 +312,25 @@ VALUES
     'password123',
     'admin'
 );
-INSERT INTO users (name, email, password, role) VALUES 
-('Student Name', 'student@email.com', 'password123', 'student');
+-- NOTE: Student portal login uses `users` table.
+-- Add student grantee accounts here (one row per student), with `role='student'` and `student_id` matching `students.student_id`.
+-- Generated test accounts (use INSERT IGNORE so it won’t fail if already present).
+INSERT IGNORE INTO users (name, email, password, role, student_id) VALUES
+('Philip, Justine, Gunda', 'justine.gunda@example.com', 'password123', 'student', '23000802700'),
+('Grace, Villanueva', 'grace.villanueva@example.com', 'password123', 'student', '2300092711'),
+('Emmanuel, Cruz', 'emmanuel.cruz@example.com', 'password123', 'student', '2300092710'),
+('Nina, Navarro', 'nina.navarro@example.com', 'password123', 'student', '2300092709'),
+('Luis, Garcia', 'luis.garcia@example.com', 'password123', 'student', '2300092708'),
+('Sophia, Ramirez', 'sophia.ramirez@example.com', 'password123', 'student', '2300092707'),
+('Paul, Mendoza', 'paul.mendoza@example.com', 'password123', 'student', '2300092706'),
+('Kelly, Reyes', 'kelly.reyes@example.com', 'password123', 'student', '2300092705'),
+('Mark, Santos', 'mark.santos@example.com', 'password123', 'student', '2300092704'),
+('Anne, Dela, Cruz', 'anne.cruz@example.com', 'password123', 'student', '2300092703'),
+('John, Rivera', 'john.rivera@example.com', 'password123', 'student', '2300092702'),
+('Maria, Santos', 'maria.santos@example.com', 'password123', 'student', '2300092701'),
+('Pjong', 'pjong@example.com', 'password123', 'student', '2300092700');
+
+
 
 -- =========================================
 -- SAMPLE TES/TDP STUDENTS

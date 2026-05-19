@@ -1,0 +1,2 @@
+Pending next steps: add nodemailer dependency, add API endpoint /student/notifications and update frontend StudentNotifications to fetch it.
+

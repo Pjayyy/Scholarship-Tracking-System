@@ -1,0 +1,4 @@
+Manual announcement dispatch
+- There is /admin/announcements/gmail-sync but no manual POST endpoint for announcements.
+- If admin UI supports posting announcements manually, add endpoint (e.g., POST /admin/announcements) that inserts into scholarship_announcements and then calls dispatchAnnouncement({announcementId}).
+

@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import App from "./App";
+import App from "./app/App";
 
 test("renders Scholarship Portal login screen", () => {
   render(<App />);
@@ -14,5 +14,4 @@ test("renders Scholarship Portal login screen", () => {
   expect(passwordInput).toBeInTheDocument();
 
 });
-
 
