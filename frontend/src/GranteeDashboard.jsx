@@ -101,7 +101,6 @@ function GranteeDashboard() {
     // Personal
     fullName: "",
     name: "",
-    // DB values are ENUM('Male','Female'), so default to these strings.
     sex: "",
     birthdate: "",
 
@@ -125,7 +124,6 @@ function GranteeDashboard() {
     beneficiary_status: "",
     beneficiaryStatus: "",
 
-    // QR
     qr_generated: false,
     qrGenerated: false,
     qrCodeStatus: "",
