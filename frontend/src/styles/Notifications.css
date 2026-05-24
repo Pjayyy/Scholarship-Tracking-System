@@ -5,11 +5,11 @@
 }
 
 .notifications-hero {
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  border-radius: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-xl);
   backdrop-filter: blur(18px);
-  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--shadow-lg);
   padding: 2rem;
 }
 
@@ -24,8 +24,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
-  font-weight: 700;
-  color: #2563eb;
+  font-weight: 800;
+  color: var(--primary);
   letter-spacing: 0.04em;
   font-size: 0.9rem;
   text-transform: uppercase;
@@ -41,7 +41,7 @@
 .notifications-hero p {
   margin-top: 0.9rem;
   max-width: 42rem;
-  color: #475569;
+  color: var(--text-secondary);
   font-size: 1rem;
 }
 
@@ -52,7 +52,7 @@
 }
 
 .hero-badge {
-  background: #f8fafc;
+  background: var(--bg-secondary);
   border: 1px solid rgba(148, 163, 184, 0.24);
   border-radius: 1.25rem;
   display: inline-flex;
@@ -69,12 +69,12 @@
 
 .hero-badge strong {
   display: block;
-  font-size: 1.75rem;
-  color: #0f172a;
+  font-size: 1.5rem;
+  color: var(--text-primary);
 }
 
 .hero-badge span {
-  color: #475569;
+  color: var(--text-secondary);
   display: block;
   font-size: 0.92rem;
 }
@@ -84,18 +84,19 @@
   gap: 1rem;
   border-radius: 1.25rem;
   padding: 1.2rem;
-  background: rgba(15, 23, 42, 0.03);
+  background: var(--surface-highlight);
 }
 
 .hero-meta > div {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  color: #475569;
+  color: var(--text-secondary);
 }
 
+
 .hero-meta strong {
-  color: #0f172a;
+  color: var(--text-primary);
   font-size: 1rem;
 }
 
@@ -133,22 +134,22 @@
 
 .search-group {
   align-items: center;
-  background: #ffffff;
+  background: var(--bg-card);
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 1rem;
   padding: 0.85rem 1rem;
 }
 
 .search-icon {
-  color: #64748b;
+  color: var(--text-secondary);
   font-size: 1.05rem;
 }
 
 .search-input {
   border: none;
   width: 100%;
-  font-size: 0.98rem;
-  color: #0f172a;
+  font-size: 0.95rem;
+  color: var(--text-primary);
   background: transparent;
   outline: none;
 }
@@ -173,9 +174,9 @@
   width: 100%;
   padding: 0.95rem 1rem;
   border-radius: 0.95rem;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  background: #ffffff;
-  color: #0f172a;
+  border: 1px solid var(--surface-border);
+  background: var(--bg-card);
+  color: var(--text-primary);
 }
 
 .tab-row {
@@ -185,18 +186,18 @@
 }
 
 .tab {
-  background: #f8fafc;
+  background: var(--bg-secondary);
   border: 1px solid rgba(148, 163, 184, 0.28);
   color: #475569;
   padding: 0.9rem 1.3rem;
-  border-radius: 999px;
+  border-radius: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .tab.active {
-  background: #2563eb;
+  background: var(--primary);
   color: white;
   border-color: transparent;
 }
@@ -217,7 +218,7 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.2rem;
-  background: #f8fafc;
+  background: var(--bg-secondary);
   border-radius: 1.1rem;
   border: 1px solid rgba(148, 163, 184, 0.2);
 }
@@ -237,17 +238,17 @@
 }
 
 .notification-card {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 1.35rem;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg);
   padding: 1.4rem;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--shadow-md);
   display: grid;
   gap: 1rem;
 }
 
 .notification-card.unread {
-  border-color: rgba(59, 130, 246, 0.3);
+  border-left: 4px solid var(--primary);
 }
 
 .notification-card-row {
@@ -275,9 +276,10 @@
 
 .notification-copy p {
   margin: 0.55rem 0 0;
-  color: #475569;
+  color: var(--text-secondary);
   line-height: 1.6;
 }
+
 
 .priority-chip {
   display: inline-flex;
@@ -297,16 +299,17 @@
 }
 
 .priority-dot.high {
-  background: #f87171;
+  background: rgba(239, 68, 68, 0.95);
 }
 
 .priority-dot.medium {
-  background: #fbbf24;
+  background: rgba(245, 158, 11, 0.95);
 }
 
 .priority-dot.low {
-  background: #34d399;
+  background: rgba(16, 185, 129, 0.95);
 }
+
 
 .notification-meta-row {
   display: flex;

@@ -1,7 +1,7 @@
 const { Router } = require("express");
-const { verifyToken } = require("../middleware/auth.js");
+const { verifyToken, requireAdmin } = require("../middleware/auth.js");
 const { documentUpload, requireDocumentAnalyzerRole } = require("../middleware/documentUpload.js");
-const { analyze } = require("../controllers/documents.controller.js");
+const { analyze, bulkImportStudents } = require("../controllers/documents.controller.js");
 
 const router = Router();
 
@@ -13,5 +13,11 @@ router.post(
   analyze
 );
 
-module.exports = router;
+router.post(
+  "/documents/bulk-import",
+  verifyToken,
+  requireAdmin,
+  bulkImportStudents
+);
 
+module.exports = router;

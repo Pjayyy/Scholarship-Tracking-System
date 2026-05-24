@@ -33,7 +33,7 @@
 }
 
 .sidebar-brand {
-  display: flex;
+  display: none;
   align-items: center;
   gap: 0.75rem;
 }

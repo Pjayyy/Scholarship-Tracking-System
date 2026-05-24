@@ -18,6 +18,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 import axios from "axios";
 import { FiMoon, FiSun } from "react-icons/fi";
+import { FiLogOut } from "react-icons/fi";
 
 import { getLoginVariant, STAFF_LOGIN_PATH } from "./auth/authRoute";
 
@@ -27,7 +28,6 @@ function App() {
   const [page, setPage] = useState("dashboard");
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [isDarkMode, setIsDarkMode] = useState(true);
 
   const [studentName, setStudentName] = useState(null);
 
@@ -47,14 +47,8 @@ function App() {
 
   // Load from storage once
   useEffect(() => {
-    const savedTheme =
-      localStorage.getItem("appTheme") ||
-      localStorage.getItem("authTheme");
-
-    const nextTheme = savedTheme === "light" ? "light" : "dark";
-    document.documentElement.dataset.theme = nextTheme;
-    setIsDarkMode(nextTheme !== "light");
-
+    document.documentElement.dataset.theme = "light";
+    
     try {
       const savedUser = localStorage.getItem("user");
       const savedToken = localStorage.getItem("token");
@@ -174,18 +168,19 @@ function App() {
     document.title = `Scholarship System - ${page}`;
   }, [page, user, loginVariant]);
 
-  const toggleTheme = () => {
-    const next = !isDarkMode;
-    setIsDarkMode(next);
-    document.documentElement.dataset.theme = next ? "dark" : "light";
-    localStorage.setItem("appTheme", next ? "dark" : "light");
-  };
-
   const topBarName = useMemo(() => {
     if (!user) return "";
     if (!isStudent) return user?.name;
     return studentName || user?.name;
   }, [user, isStudent, studentName]);
+
+  const topBarInitials = useMemo(() => {
+    const name = String(topBarName || "").trim();
+    if (!name) return "U";
+    const parts = name.split(/\s+/).filter(Boolean);
+    const initials = (parts[0]?.[0] || "") + (parts[parts.length - 1]?.[0] || "");
+    return (initials || "U").toUpperCase();
+  }, [topBarName]);
 
   return (
     <>
@@ -194,7 +189,7 @@ function App() {
         autoClose={2500}
         hideProgressBar={false}
         newestOnTop
-        theme="dark"
+        theme="light"
       />
 
       {loading ? (
@@ -212,30 +207,30 @@ function App() {
           <div className="main">
             <div className="topbar">
               <div className="topbar-left">
-                <h3>
-                  Welcome, {topBarName}{" "}
-                  <span className="topbar-role">({user?.role})</span>
-                </h3>
+                <div className="topbar-kicker">Welcome back,</div>
+                <div className="topbar-title-row">
+                  <h3 className="topbar-title">
+                    {topBarName} <span className="topbar-role-pill">{user?.role}</span>
+                  </h3>
+                </div>
                 <div className="topbar-meta">
                   <span className="status-pill">
                     <span className="status-dot" /> Live session
                   </span>
-                  <span>{currentTime.toLocaleString()}</span>
+                  <span className="topbar-datetime">
+                    {currentTime.toLocaleDateString()} • {currentTime.toLocaleTimeString()}
+                  </span>
                 </div>
               </div>
 
               <div className="topbar-right">
-                <button
-                  type="button"
-                  className="pill btn-ghost"
-                  onClick={toggleTheme}
-                  aria-label="Toggle theme"
-                >
-                  {isDarkMode ? <FiSun /> : <FiMoon />}
-                  <span>{isDarkMode ? "Light Mode" : "Dark Mode"}</span>
-                </button>
+                <div className="topbar-hero-qr" aria-hidden="true" />
 
-                <div className="session-pill">JWT: {token ? "Active" : "Missing"}</div>
+                <div className="topbar-user">
+                  <div className="topbar-initials" aria-label="Profile avatar">
+                    {topBarInitials}
+                  </div>
+                </div>
 
                 <button
                   className="btn btn-ghost logout-btn"
@@ -247,6 +242,7 @@ function App() {
                     window.location.assign("/");
                   }}
                 >
+                  <FiLogOut />
                   Logout
                 </button>
               </div>

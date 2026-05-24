@@ -98,7 +98,7 @@ app.use(authRoutes);
 app.use(studentRoutes);
 app.use(adminRoutes);
 app.use(documentsRoutes);
-app.use(studentsRoutes);
+app.use("/students", studentsRoutes);
 app.use(attendanceRoutes);
 app.use(qrRoutes);
 app.use(dashboardRoutes);

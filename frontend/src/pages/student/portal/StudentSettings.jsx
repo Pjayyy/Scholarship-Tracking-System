@@ -1,10 +1,14 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { FiLock, FiBell, FiMoon, FiSave, FiEye, FiEyeOff } from "react-icons/fi";
+import { FiLock, FiBell, FiMoon, FiSave, FiEye, FiEyeOff, FiCheckCircle, FiXCircle } from "react-icons/fi";
+import axios from "axios";
+import { toast } from "react-toastify";
 
-function StudentSettings({ studentData }) {
+function StudentSettings() {
   const [activeTab, setActiveTab] = useState("account");
   const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [settings, setSettings] = useState({
     currentPassword: "",
     newPassword: "",
@@ -31,9 +35,51 @@ function StudentSettings({ studentData }) {
     setSettings({ ...settings, [name]: value });
   };
 
-  const handleSaveChanges = () => {
-    setChangesSaved(true);
-    setTimeout(() => setChangesSaved(false), 3000);
+  const handleSavePassword = async () => {
+    const { currentPassword, newPassword, confirmPassword } = settings;
+
+    // Validation
+    if (!currentPassword) {
+      toast.error("Please enter your current password");
+      return;
+    }
+    if (!newPassword) {
+      toast.error("Please enter a new password");
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error("New password must be at least 6 characters");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("New passwords do not match");
+      return;
+    }
+
+    setIsChangingPassword(true);
+    const token = localStorage.getItem("token");
+
+    try {
+      const res = await axios.put(
+        "http://localhost:5000/student/change-password",
+        { currentPassword, newPassword },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res.data.status === "success") {
+        toast.success("Password updated successfully!");
+        setSettings({
+          ...settings,
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to change password");
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   const tabs = [
@@ -146,11 +192,11 @@ function StudentSettings({ studentData }) {
                 </label>
                 <div style={{ position: "relative" }}>
                   <input
-                    type={showPassword ? "text" : "password"}
+                    type={showNewPassword ? "text" : "password"}
                     name="newPassword"
                     value={settings.newPassword}
                     onChange={handlePasswordChange}
-                    placeholder="Enter new password"
+                    placeholder="Min. 6 characters"
                     style={{
                       width: "100%",
                       padding: "0.875rem 1rem 0.875rem 2.75rem",
@@ -160,6 +206,46 @@ function StudentSettings({ studentData }) {
                     }}
                   />
                   <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    style={{
+                      position: "absolute",
+                      right: "1rem",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "none",
+                      border: "none",
+                      color: "#6b7280",
+                      cursor: "pointer",
+                      padding: "0.5rem",
+                    }}
+                  >
+                    {showNewPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontWeight: 600, marginBottom: "0.5rem" }}>
+                  Confirm New Password
+                </label>
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    value={settings.confirmPassword}
+                    onChange={handlePasswordChange}
+                    placeholder="Re-enter new password"
+                    style={{
+                      width: "100%",
+                      padding: "0.875rem 1rem 0.875rem 2.75rem",
+                      borderRadius: "0.875rem",
+                      border: "1px solid #e5e7eb",
+                      fontSize: "0.95rem",
+                    }}
+                  />
+                  <button
+                    type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     style={{
                       position: "absolute",
@@ -177,32 +263,32 @@ function StudentSettings({ studentData }) {
                   </button>
                 </div>
               </div>
+            </div>
 
-              <div>
-                <label style={{ display: "block", fontWeight: 600, marginBottom: "0.5rem" }}>
-                  Confirm Password
-                </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={settings.confirmPassword}
-                  onChange={handlePasswordChange}
-                  placeholder="Confirm new password"
-                  style={{
-                    width: "100%",
-                    padding: "0.875rem 1rem",
-                    borderRadius: "0.875rem",
-                    border: "1px solid #e5e7eb",
-                    fontSize: "0.95rem",
-                  }}
-                />
-              </div>
+            {/* Password Requirements Hint */}
+            <div
+              style={{
+                marginBottom: "1.5rem",
+                padding: "1rem",
+                background: "#f0f9ff",
+                borderRadius: "0.875rem",
+                fontSize: "0.875rem",
+                color: "#1e40af",
+                borderLeft: "4px solid #3b82f6",
+              }}
+            >
+              <strong>Password Requirements:</strong>
+              <ul style={{ margin: "0.5rem 0 0 1.25rem", padding: 0 }}>
+                <li>Minimum 6 characters</li>
+                <li>Use a mix of letters and numbers for security</li>
+              </ul>
             </div>
 
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={handleSaveChanges}
+              onClick={handleSavePassword}
+              disabled={isChangingPassword}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -213,10 +299,17 @@ function StudentSettings({ studentData }) {
                 border: "none",
                 borderRadius: "0.875rem",
                 fontWeight: 600,
-                cursor: "pointer",
+                cursor: isChangingPassword ? "not-allowed" : "pointer",
+                opacity: isChangingPassword ? 0.7 : 1,
               }}
             >
-              <FiSave size={18} /> Update Password
+              {isChangingPassword ? (
+                <>Updating...</>
+              ) : (
+                <>
+                  <FiSave size={18} /> Update Password
+                </>
+              )}
             </motion.button>
           </motion.div>
         )}

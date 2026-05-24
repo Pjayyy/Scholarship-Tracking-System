@@ -2,15 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import axios from "axios";
 import QRCode from "qrcode";
-import { FiX, FiUser, FiCalendar, FiRepeat, FiLoader, FiInfo, FiAlertCircle, FiCheck, FiShield } from "react-icons/fi";
+import { FiX, FiUser, FiCalendar, FiRepeat, FiLoader, FiInfo, FiAlertCircle, FiCheck, FiShield, FiFileText } from "react-icons/fi";
 
 
 import Swal from "sweetalert2";
 import "../../styles/GranteeEditModal.css";
-
-
+import "../../styles/adminButtons.css";
 
 function parseNameParts(fullName) {
+
+
   const s = (fullName ?? "").trim();
   if (!s) return { last: "", given: "", ext: "" };
 
@@ -83,23 +84,23 @@ function QrPreview({ activeRowId, studentId }) {
 
 
 
-function AttendanceTabEditor({ activeRowId }) {
+function DocumentTabEditor({ activeRowId }) {
   return (
     <div>
       <div style={{ fontWeight: 1000, color: "var(--text-secondary)", marginBottom: 10, fontSize: 13 }}>
-        Attendance
+        Document Compliance
       </div>
       <div style={{ padding: 14, borderRadius: 16, border: "1px solid rgba(148,163,184,0.28)", background: "rgba(255,255,255,0.45)" }}>
         <div style={{ display: "grid", gap: 10 }}>
           <div className="grantee-field" style={{ gap: 6 }}>
-            <div className="grantee-label">Attendance Percentage</div>
-            <div style={{ fontWeight: 1000 }}>—%</div>
+            <div className="grantee-label">Requirements Submitted</div>
+            <div style={{ fontWeight: 1000 }}>3 / 5</div>
           </div>
           <div className="grantee-field" style={{ gap: 6 }}>
-            <div className="grantee-label">Attendance Status</div>
-            <div style={{ fontWeight: 1000 }}>At Risk</div>
+            <div className="grantee-label">Validation Status</div>
+            <div style={{ fontWeight: 1000 }}>Verified</div>
           </div>
-          <div className="hint">Attendance is recorded via QR scanning in AttendanceMonitor. Edit controls can be added once backend supports manual updates.</div>
+          <div className="hint">Documents are reviewed by the scholarship committee. Update status based on physical or digital submissions.</div>
         </div>
       </div>
     </div>
@@ -220,6 +221,9 @@ function GranteeDashboard() {
 
   useEffect(() => {
     fetchGrantees();
+    // Auto-refresh every 10 seconds so admin sees student updates instantly
+    const interval = setInterval(fetchGrantees, 10000);
+    return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -231,16 +235,23 @@ function GranteeDashboard() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (grantees || []).filter((g) => {
-      const { last, given, ext } = parseNameParts(g.name);
+      // Search: match against student_id, award_number, or any part of the name
       const matchesSearch =
         !q ||
         String(g.student_id ?? "").toLowerCase().includes(q) ||
-        `${last} ${given} ${ext}`.toLowerCase().includes(q);
+        String(g.award_number ?? "").toLowerCase().includes(q) ||
+        String(g.name ?? "").toLowerCase().includes(q);
 
+      // Degree program filter
       const matchesProgram = !degreeProgram || String(g.course ?? "") === degreeProgram;
 
-      // DB doesn't contain semester/sex/birthdate yet; keep UI-only filter semantics.
-      const matchesSemester = !semester ? true : true;
+      // Scholarship type filter (TES/TDP mapped to semester-like behavior)
+      const scholarshipTypeRaw = String(g.scholarship_type ?? "").toUpperCase();
+      const matchesSemester =
+        !semester ||
+        semester === "all" ||
+        (semester === "TES" && scholarshipTypeRaw.includes("TES")) ||
+        (semester === "TDP" && scholarshipTypeRaw.includes("TDP"));
 
       return matchesSearch && matchesProgram && matchesSemester;
     });
@@ -285,6 +296,8 @@ function GranteeDashboard() {
     setActiveRowId(g.id);
 
     setForm({
+      // Personal
+      student_id: g.student_id ?? "",
       name: g.name ?? "",
       sex: g.sex ?? "",
       birthdate: g.birthdate ? String(g.birthdate) : "",
@@ -297,6 +310,8 @@ function GranteeDashboard() {
 
       // QR (backend-supported stored value)
       qr_code: g.qr_code ?? g.qrCode ?? "",
+      qr_generated: g.qr_generated ?? g.qrGenerated ?? false,
+      qrGenerated: g.qrGenerated ?? g.qr_generated ?? false,
     });
 
     setFormError(null);
@@ -310,8 +325,7 @@ function GranteeDashboard() {
   };
 
   const saveUpdates = async () => {
-    // Validation: allow partial updates (e.g., only Sex/Birthdate)
-    // Only enforce required fields when we are creating or when the relevant inputs exist.
+    // Validation: only enforce required fields in create mode
     if (activeRowId == null) {
       if (!form.student_id) {
         setFormError("Student ID is required.");
@@ -331,12 +345,10 @@ function GranteeDashboard() {
       }
     }
 
-
-
     // CREATE mode
     if (activeRowId == null) {
       try {
-        await axios.post("http://localhost:5000/add-grantee", {
+        await axios.post("http://localhost:5000/students", {
           student_id: form.student_id,
           award_number: form.award_number ?? "",
           qr_code: form.qr_code ?? "",
@@ -344,6 +356,8 @@ function GranteeDashboard() {
           course: form.course,
           year_level: form.year_level,
           scholarship_type: form.scholarship_type,
+          sex: form.sex ?? "",
+          birthdate: form.birthdate ?? "",
         });
 
         await fetchGrantees();
@@ -361,24 +375,17 @@ function GranteeDashboard() {
       return;
     }
 
-
     // UPDATE mode
     try {
-      const active = grantees.find((x) => x.id === activeRowId);
-
       await axios.put(`http://localhost:5000/students/${activeRowId}`, {
-        student_id: active?.student_id ?? "",
-        // Scholarship
-        award_number: form.award_number ?? active?.award_number ?? "",
-        qr_code: form.qr_code ?? active?.qr_code ?? "",
-        scholarship_type: form.scholarship_type ?? active?.scholarship_type ?? "",
-        // Personal
         name: form.name,
         sex: form.sex ?? "",
         birthdate: form.birthdate ?? "",
-        // Program
+        award_number: form.award_number ?? "",
+        scholarship_type: form.scholarship_type ?? "",
         course: form.course,
-        year_level: form.year_level ?? active?.year_level ?? "",
+        year_level: form.year_level ?? "",
+        qr_code: form.qr_code ?? "",
       });
       await fetchGrantees();
       closeDrawer();
@@ -407,7 +414,7 @@ function GranteeDashboard() {
 
   const ui = {
     page: {
-      padding: 18,
+      padding: 20,
       fontFamily: "Inter, Roboto, system-ui, -apple-system, Segoe UI, sans-serif",
       background: "transparent",
       color: "var(--text-primary)",
@@ -420,65 +427,65 @@ function GranteeDashboard() {
       background: "var(--surface)",
       border: "1px solid var(--surface-border)",
       borderRadius: 16,
-      padding: "14px 18px",
+      padding: "16px 20px",
       boxShadow: "var(--shadow-md)",
       marginBottom: 16,
     },
     headerLeft: { display: "flex", flexDirection: "column" },
     headerRight: { textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end" },
-    headerCaption: { fontSize: 12, color: "var(--text-secondary)", marginBottom: 2, fontWeight: 700 },
-    headerTitle: { fontSize: 16, fontWeight: 900 },
+    headerCaption: { fontSize: 13, color: "var(--text-secondary)", marginBottom: 2, fontWeight: 700 },
+    headerTitle: { fontSize: 18, fontWeight: 900 },
 
     controls: {
       background: "var(--surface)",
       border: "1px solid var(--surface-border)",
       borderRadius: 16,
-      padding: 14,
+      padding: 16,
       marginBottom: 16,
       boxShadow: "var(--shadow-md)",
     },
 
     addBtn: {
-      padding: "12px 16px",
+      padding: "13px 18px",
       borderRadius: 12,
       background: "var(--primary)",
       color: "#fff",
-      border: "1px solid rgba(56,189,248,0.35)",
+      border: "none",
       cursor: "pointer",
-      fontWeight: 900,
-      fontSize: 14,
+      fontWeight: 700,
+      fontSize: 15,
       whiteSpace: "nowrap",
     },
     primaryBtn: {
-      padding: "10px 16px",
+      padding: "11px 16px",
       borderRadius: 12,
       background: "var(--primary)",
       color: "#fff",
       border: "1px solid rgba(56,189,248,0.35)",
       cursor: "pointer",
       fontWeight: 900,
-      fontSize: 14,
+      fontSize: 15,
     },
     outlineBtn: {
-      padding: "10px 14px",
+      padding: "11px 14px",
       borderRadius: 12,
       background: "rgba(2,6,23,0.12)",
       color: "var(--text-primary)",
       border: "1px solid var(--surface-border)",
       cursor: "pointer",
       fontWeight: 900,
-      fontSize: 14,
+      fontSize: 15,
     },
 
-    label: { display: "block", fontSize: 12, color: "var(--text-secondary)", marginBottom: 6, fontWeight: 700 },
+    label: { display: "block", fontSize: 13, color: "var(--text-secondary)", marginBottom: 6, fontWeight: 700 },
     field: {
       width: "100%",
-      padding: "10px 12px",
+      padding: "11px 12px",
       borderRadius: 12,
       border: "1px solid var(--surface-border)",
       outline: "none",
       background: "rgba(2,6,23,0.12)",
-      fontSize: 14,
+      fontSize: 15,
       color: "var(--text-primary)",
     },
 
@@ -598,8 +605,10 @@ function GranteeDashboard() {
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
           <button
             type="button"
+            className="grantee-admin-cta-btn"
             style={ui.addBtn}
             onClick={() => {
+
               // Create mode
               setActiveRowId(null);
               setActiveTab("personal");
@@ -677,21 +686,22 @@ function GranteeDashboard() {
           </div>
 
           <div style={{ minWidth: 180, flex: "0 0 180px" }}>
-            <label style={ui.label}>Semester</label>
+            <label style={ui.label}>Scholarship Type</label>
             <select style={ui.field} value={semester} onChange={(e) => setSemester(e.target.value)}>
-              <option value="2nd">2nd Semester</option>
-              <option value="1st">1st Semester</option>
-              <option value="summer">Summer</option>
+              <option value="">All Types</option>
+              <option value="TES">TES</option>
+              <option value="TDP">TDP</option>
             </select>
           </div>
 
-          <button type="button" style={ui.outlineBtn} onClick={() => { /* client-side filters auto-apply */ }}>
+          <button type="button" className="grantee-admin-cta-btn" style={ui.outlineBtn} onClick={() => { /* client-side filters auto-apply */ }}>
             Filter
           </button>
 
-          <button type="button" style={ui.addBtn} onClick={exportCsv}>
+          <button type="button" className="grantee-admin-cta-btn" style={ui.addBtn} onClick={exportCsv}>
             Export
           </button>
+
         </div>
       </div>
 
@@ -709,10 +719,9 @@ function GranteeDashboard() {
                 <th style={ui.th}>Birthdate</th>
                 <th style={ui.th}>Degree Program</th>
                 <th style={ui.th}>Scholarship Type</th>
-                <th style={{ ...ui.th, textAlign: "left" }}>Attendance Percentage</th>
+                <th style={{ ...ui.th, textAlign: "left" }}>Submission Progress</th>
                 <th style={ui.th}>Beneficiary Status</th>
-                <th style={ui.th}>Last QR Scan</th>
-                <th style={ui.th}>QR Status</th>
+                <th style={ui.th}>Renewal Date</th>
                 <th style={{ ...ui.th, textAlign: "center" }}>Actions</th>
               </tr>
             </thead>
@@ -781,7 +790,7 @@ function GranteeDashboard() {
                     : { bg: "rgba(239,68,68,0.14)", color: "#dc2626", border: "rgba(239,68,68,0.35)" };
 
                   const rowBase = {
-                    transition: "background 160ms ease, box-shadow 160ms ease",
+                    transition: "all 0.2s",
                   };
 
                   const onView = () => {
@@ -798,28 +807,10 @@ function GranteeDashboard() {
                     <tr
                       key={g.id}
                       style={rowBase}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "#f8fafc";
-                        e.currentTarget.style.boxShadow = "inset 0 0 0 1px rgba(15,23,42,0.04)";
-                        // Hover: make row text dark for contrast (some cells have inline colors)
-                        e.currentTarget.style.color = "#0f172a";
-                        // Force Attendance Percentage + Last QR Scan to dark on hover
-                        const perc = e.currentTarget.querySelector('[data-cell="attendance-perc"]');
-                        if (perc) perc.style.color = "#000000";
-                        const last = e.currentTarget.querySelector('[data-cell="last-qr"]');
-                        if (last) last.style.color = "#000000";
-
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "transparent";
-                        e.currentTarget.style.boxShadow = "none";
-                        // Not hovered: set row text to white
-                        e.currentTarget.style.color = "#ffffff";
-                      }}
                     >
                       <td style={{ ...ui.td, whiteSpace: "nowrap" }}>{g.student_id}</td>
                       <td style={ui.td}>
-                        <div style={{ fontWeight: 1000, color: "#ffffff", textShadow: "0 1px 0 rgba(0,0,0,0.35)" }} data-cell="student-name">
+                        <div style={{ fontWeight: 700, color: "var(--text-primary)" }}>
                           {np.last}
                           {np.given ? `, ${np.given}` : ""}
                           {np.ext ? `, ${np.ext}` : ""}
@@ -837,10 +828,10 @@ function GranteeDashboard() {
                             alignItems: "center",
                             padding: "6px 10px",
                             borderRadius: 999,
-                            background: scholarshipType === "TES" ? "rgba(59,130,246,0.12)" : "rgba(37,99,235,0.12)",
-                            color: scholarshipType === "TES" ? "#2563eb" : "#1d4ed8",
-                            border: scholarshipType === "TES" ? "rgba(59,130,246,0.35)" : "rgba(37,99,235,0.35)",
-                            fontWeight: 900,
+                            background: scholarshipType === "TES" ? "rgba(79, 70, 229, 0.1)" : "rgba(99, 102, 241, 0.1)",
+                            color: scholarshipType === "TES" ? "var(--primary)" : "var(--secondary)",
+                            border: `1px solid ${scholarshipType === "TES" ? "rgba(79, 70, 229, 0.2)" : "rgba(99, 102, 241, 0.2)"}`,
+                            fontWeight: 700,
                             fontSize: 12,
                             whiteSpace: "nowrap",
                           }}
@@ -852,12 +843,12 @@ function GranteeDashboard() {
                       <td style={ui.td}>
                         <div style={{ minWidth: 220 }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, gap: 10 }}>
-                            <span data-cell="attendance-perc" style={{ fontWeight: 1000, color: "#ffffff", textShadow: "0 1px 0 rgba(0,0,0,0.45)" }}>{attendance}%</span>
-                            <span style={{ fontSize: 12, color: "#ffffff", fontWeight: 800, textShadow: "0 1px 0 rgba(0,0,0,0.45)" }}>{attendance >= 80 ? "On Track" : attendance >= 60 ? "Monitor" : "Critical"}</span>
+                            <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>{attendance > 50 ? "Complete" : "Pending"}</span>
+                            <span style={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 600 }}>{attendance >= 80 ? "Validated" : "Under Review"}</span>
 
                           </div>
-                          <div style={{ height: 10, borderRadius: 999, background: attendanceBg, overflow: "hidden", border: `1px solid ${attendanceColor}20` }}>
-                            <div style={{ width: `${attendance}%`, height: "100%", background: attendanceColor, borderRadius: 999 }} />
+                          <div style={{ height: 8, borderRadius: 999, background: "#f1f5f9", overflow: "hidden" }}>
+                            <div style={{ width: `75%`, height: "100%", background: "var(--primary)", borderRadius: 999 }} />
                           </div>
                         </div>
                       </td>
@@ -872,7 +863,7 @@ function GranteeDashboard() {
                             background: badge.bg,
                             color: badge.color,
                             border: `1px solid ${badge.border}`,
-                            fontWeight: 1000,
+                            fontWeight: 700,
                             fontSize: 12,
                             whiteSpace: "nowrap",
                           }}
@@ -884,35 +875,13 @@ function GranteeDashboard() {
                       <td style={ui.td}>
                         <div
                           style={{
-                            fontWeight: 900,
-                            color: "#ffffff",
-                            textShadow: "0 1px 0 rgba(0,0,0,0.35)",
+                            fontWeight: 600,
+                            color: "var(--text-secondary)",
                           }}
                           data-cell="last-qr"
                         >
-                          {lastQrScanDisplay}
+                          May 15, 2026
                         </div>
-                      </td>
-
-
-
-                      <td style={ui.td}>
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            padding: "6px 10px",
-                            borderRadius: 999,
-                            background: qrBadge.bg,
-                            color: qrBadge.color,
-                            border: `1px solid ${qrBadge.border}`,
-                            fontWeight: 1000,
-                            fontSize: 12,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {qrStatus}
-                        </span>
                       </td>
 
                       <td style={{ ...ui.td, textAlign: "center" }}>
@@ -923,6 +892,7 @@ function GranteeDashboard() {
                             type="button"
                             aria-label="View"
                             title="View"
+                            className="grantee-admin-icon-btn"
                             style={{
                               ...ui.iconBtnBase,
                               borderColor: "rgba(37, 99, 235, 0.45)",
@@ -931,8 +901,9 @@ function GranteeDashboard() {
                               boxShadow: "0 6px 16px rgba(29,78,216,0.10)",
                             }}
                             onClick={onView}
-                          >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+
                               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                               <circle cx="12" cy="12" r="3" />
                             </svg>
@@ -944,16 +915,19 @@ function GranteeDashboard() {
                             type="button"
                             aria-label="Edit"
                             title="Edit"
+                            className="grantee-admin-icon-btn"
                             style={{
                               ...ui.iconBtnBase,
                               borderColor: "rgba(34, 197, 94, 0.45)",
+
                               background: "rgba(34, 197, 94, 0.14)",
                               color: "#16a34a",
                               boxShadow: "0 6px 16px rgba(22,163,74,0.10)",
                             }}
                             onClick={() => openEditDrawer(g)}
-                          >
+          >
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+
                               <path d="M12 20h9" />
                               <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" />
                             </svg>
@@ -965,16 +939,19 @@ function GranteeDashboard() {
                             type="button"
                             aria-label="Delete"
                             title="Delete"
+                            className="grantee-admin-icon-btn"
                             style={{
                               ...ui.iconBtnBase,
                               borderColor: "rgba(239, 68, 68, 0.45)",
+
                               background: "rgba(239, 68, 68, 0.14)",
                               color: "#dc2626",
                               boxShadow: "0 6px 16px rgba(220,38,38,0.10)",
                             }}
                             onClick={() => deleteRow(g.id)}
-                          >
+          >
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+
                               <polyline points="3 6 5 6 21 6" />
                               <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                               <path d="M10 11v6" />
@@ -989,16 +966,19 @@ function GranteeDashboard() {
                             type="button"
                             aria-label="View QR"
                             title="View QR"
+                            className="grantee-admin-icon-btn"
                             style={{
                               ...ui.iconBtnBase,
                               borderColor: "rgba(99, 102, 241, 0.45)",
+
                               background: "rgba(99, 102, 241, 0.14)",
                               color: "#4f46e5",
                               boxShadow: "0 6px 16px rgba(79,70,229,0.10)",
                             }}
                             onClick={onViewQR}
-                          >
+          >
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+
                               <rect x="3" y="3" width="7" height="7" rx="1" />
                               <rect x="14" y="3" width="7" height="7" rx="1" />
                               <rect x="3" y="14" width="7" height="7" rx="1" />
@@ -1039,7 +1019,7 @@ function GranteeDashboard() {
               transition={{ type: "spring", stiffness: 320, damping: 26 }}
               role="dialog"
               aria-modal="true"
-              aria-label="Edit Grantee Record"
+              aria-label={activeRowId ? "Edit Grantee Record" : "Add New Grantee"}
             >
               <div className="grantee-edit-header">
                 <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
@@ -1047,28 +1027,8 @@ function GranteeDashboard() {
                     <FiUser size={22} />
                   </div>
                   <div>
-                    <div className="grantee-edit-title">Edit Grantee Record</div>
-                    <div className="grantee-edit-subtitle">Update personal profile, scholarship details, attendance, and QR status.</div>
-                    <div style={{ marginTop: 10, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          padding: "7px 10px",
-                          borderRadius: 999,
-                          border: "1px solid rgba(37,99,235,0.35)",
-                          background: "linear-gradient(135deg, rgba(37,99,235,0.16), rgba(16,185,129,0.10))",
-                          color: "#1d4ed8",
-                          fontWeight: 1000,
-                          fontSize: 12,
-                        }}
-                      >
-                        Scholarship Status: At Risk
-                      </span>
-                      <span style={{ color: "var(--text-secondary)", fontWeight: 900, fontSize: 12 }}>
-                        {activeRowId ? `Student ID: ${activeRowId}` : "—"}
-                      </span>
-                    </div>
+                    <div className="grantee-edit-title">{activeRowId ? "Edit Grantee Record" : "Add New Grantee"}</div>
+                    <div className="grantee-edit-subtitle">Fill in the details below</div>
                   </div>
                 </div>
 
@@ -1083,339 +1043,108 @@ function GranteeDashboard() {
               </div>
 
               <div className="grantee-edit-body">
-                <div className="grantee-tabs" role="tablist" aria-label="Edit sections">
-                  {[
-                    { key: "personal", label: "Personal Information" },
-                    { key: "scholarship", label: "Scholarship Information" },
-                    { key: "attendance", label: "Attendance" },
-                    { key: "qr", label: "QR Code" },
-                  ].map((t) => (
-                    <button
-                      key={t.key}
-                      type="button"
-                      className={`grantee-tab ${activeTab === t.key ? "grantee-tab--active" : ""}`}
-                      role="tab"
-                      aria-selected={activeTab === t.key}
-                      onClick={() => setActiveTab(t.key)}
+                <div className="grantee-form-grid">
+                  {/* Row 1 */}
+                  <div className="grantee-field">
+                    <div className="grantee-label">Student ID <span style={{ color: "#ef4444" }}>*</span></div>
+                    <input
+                      className="grantee-input"
+                      value={form.student_id ?? ""}
+                      onChange={(e) => setForm((p) => ({ ...p, student_id: e.target.value }))}
+                      placeholder="e.g. 2300092700"
+                    />
+                  </div>
+
+                  <div className="grantee-field">
+                    <div className="grantee-label">Full Name <span style={{ color: "#ef4444" }}>*</span></div>
+                    <input
+                      className="grantee-input"
+                      value={form.name}
+                      onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                      placeholder="Full Name"
+                    />
+                  </div>
+
+                  {/* Row 2 */}
+                  <div className="grantee-field">
+                    <div className="grantee-label">Sex</div>
+                    <select
+                      className="grantee-input"
+                      value={form.sex}
+                      onChange={(e) => setForm((p) => ({ ...p, sex: e.target.value }))}
                     >
-                      {t.label}
-                    </button>
-                  ))}
+                      <option value="">Select…</option>
+                      {sexOptions.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="grantee-field">
+                    <div className="grantee-label">Birthdate</div>
+                    <input
+                      type="date"
+                      className="grantee-input"
+                      value={form.birthdate}
+                      onChange={(e) => setForm((p) => ({ ...p, birthdate: e.target.value }))}
+                    />
+                  </div>
+
+                  {/* Row 3 */}
+                  <div className="grantee-field">
+                    <div className="grantee-label">Degree Program <span style={{ color: "#ef4444" }}>*</span></div>
+                    <select
+                      className="grantee-input"
+                      value={form.course}
+                      onChange={(e) => setForm((p) => ({ ...p, course: e.target.value }))}
+                    >
+                      <option value="">Select…</option>
+                      {degreeProgramOptions.map((d) => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="grantee-field">
+                    <div className="grantee-label">Year Level <span style={{ color: "#ef4444" }}>*</span></div>
+                    <input
+                      className="grantee-input"
+                      value={form.year_level ?? ""}
+                      onChange={(e) => setForm((p) => ({ ...p, year_level: e.target.value }))}
+                      placeholder="e.g. 2"
+                    />
+                  </div>
+
+                  {/* Row 4 */}
+                  <div className="grantee-field">
+                    <div className="grantee-label">Scholarship Type <span style={{ color: "#ef4444" }}>*</span></div>
+                    <select
+                      className="grantee-input"
+                      value={form.scholarship_type ?? ""}
+                      onChange={(e) => setForm((p) => ({ ...p, scholarship_type: e.target.value }))}
+                    >
+                      <option value="">Select…</option>
+                      <option value="TES">TES</option>
+                      <option value="TDP">TDP</option>
+                    </select>
+                  </div>
+
+                  <div className="grantee-field">
+                    <div className="grantee-label">Award Number</div>
+                    <input
+                      className="grantee-input"
+                      value={form.award_number ?? ""}
+                      onChange={(e) => setForm((p) => ({ ...p, award_number: e.target.value }))}
+                      placeholder="Award Number"
+                    />
+                  </div>
                 </div>
 
-                {/* Tabs Content */}
-                {activeTab === "personal" && (
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-                    <div className="grantee-form-grid">
-                      <div className="grantee-field">
-                        <div className="grantee-label">
-                          Student ID <span style={{ color: "#ef4444" }}>*</span>
-                        </div>
-                        <input
-                          className="grantee-input"
-                          value={form.student_id ?? ""}
-                          onChange={(e) => setForm((p) => ({ ...p, student_id: e.target.value }))}
-                          placeholder="e.g. 2300092700"
-                        />
-                      </div>
-
-                      <div className="grantee-field">
-                        <div className="grantee-label">
-                          Full Name <span style={{ color: "#ef4444" }}>*</span>
-                        </div>
-
-                        <input
-                          className="grantee-input"
-                          value={form.name}
-                          onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                          placeholder="Full Name"
-                          aria-invalid={Boolean(formError)}
-                        />
-                      </div>
-
-                      <div className="grantee-field">
-                        <div className="grantee-label">Sex</div>
-                        <select
-                          className="grantee-input"
-                          value={form.sex}
-                          onChange={(e) => setForm((p) => ({ ...p, sex: e.target.value }))}
-                        >
-                          <option value="">Select…</option>
-                          {sexOptions.map((s) => (
-                            <option key={s} value={s}>
-                              {s}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="grantee-field">
-                        <div className="grantee-label">Birthdate</div>
-                        <input
-                          className="grantee-input"
-                          value={form.birthdate}
-                          onChange={(e) => setForm((p) => ({ ...p, birthdate: e.target.value }))}
-                          placeholder="mm/dd/yyyy"
-                        />
-                      </div>
-
-                      <div className="grantee-field">
-                        <div className="grantee-label">
-                          Degree Program <span style={{ color: "#ef4444" }}>*</span>
-                        </div>
-                        <select
-                          className="grantee-input"
-                          value={form.course}
-                          onChange={(e) => setForm((p) => ({ ...p, course: e.target.value }))}
-                        >
-                          <option value="">Select…</option>
-                          {degreeProgramOptions.map((d) => (
-                            <option key={d} value={d}>
-                              {d}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    {formError && (
-                      <div style={{ marginTop: 10, color: "#ef4444", fontWeight: 1000, fontSize: 13 }}>
-                        {formError}
-                      </div>
-                    )}
-                  </motion.div>
+                {formError && (
+                  <div style={{ marginTop: 16, color: "#ef4444", fontWeight: 700, fontSize: 13 }}>
+                    {formError}
+                  </div>
                 )}
-
-                {activeTab === "qr" && (
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, alignItems: "start" }}>
-                      <div>
-                        <div style={{ fontWeight: 1000, color: "var(--text-secondary)", marginBottom: 10, fontSize: 13 }}>
-                          QR Code Preview
-                        </div>
-                        <div
-                          style={{
-                            padding: 14,
-                            borderRadius: 16,
-                            border: "1px solid rgba(148,163,184,0.28)",
-                            background: "rgba(255,255,255,0.45)",
-                          }}
-                        >
-                              <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
-                            <div style={{ width: 220 }}>
-                              <QrPreview
-                                activeRowId={activeRowId}
-                                studentId={grantees.find((x) => x.id === activeRowId)?.student_id}
-                              />
-                            </div>
-                          </div>
-
-                        </div>
-                      </div>
-
-                      <div>
-                        <div style={{ fontWeight: 1000, color: "var(--text-secondary)", marginBottom: 10, fontSize: 13 }}>
-                          QR Details
-                        </div>
-                        <div
-                          style={{
-                            padding: 14,
-                            borderRadius: 16,
-                            border: "1px solid rgba(148,163,184,0.28)",
-                            background: "rgba(255,255,255,0.45)",
-                          }}
-                        >
-                          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                              <span style={{ color: "var(--text-secondary)", fontWeight: 900, fontSize: 12 }}>
-                                QR Status
-                              </span>
-                              <span style={{ fontWeight: 1000, fontSize: 12 }}>
-                                {form.qrGenerated ? "Generated" : "Not Generated"}
-                              </span>
-                            </div>
-
-                            <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                              <span style={{ color: "var(--text-secondary)", fontWeight: 900, fontSize: 12 }}>
-                                Last Generated
-                              </span>
-                              <span style={{ fontWeight: 1000, fontSize: 12 }}>
-                                {form.last_qr_generated_at || "—"}
-                              </span>
-                            </div>
-
-                            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 6 }}>
-                              <button
-                                type="button"
-                                className="grantee-secondary"
-                                onClick={() => {
-                                  if (!activeRowId && !form?.name?.trim()) {
-                                    Swal.fire({
-                                      title: "Missing info",
-                                      text: "Update the Full Name first to generate the QR.",
-                                      icon: "warning",
-                                      confirmButtonText: "OK",
-                                    });
-                                    return;
-                                  }
-                                  Swal.fire({
-                                    title: "Download QR",
-                                    text: "Download is client-side preview-based. Save changes to refresh QR state.",
-                                    icon: "info",
-                                    confirmButtonText: "OK",
-                                  });
-                                }}
-                              >
-                                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><FiShield size={16} /> Download QR</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                className="grantee-primary"
-                                onClick={() => {
-                                  if (!form?.name?.trim()) {
-                                    Swal.fire({
-                                      title: "Missing name",
-                                      text: "Enter a student full name first.",
-                                      icon: "warning",
-                                      confirmButtonText: "OK",
-                                    });
-                                    return;
-                                  }
-                                  const ts = new Date().toLocaleString();
-                                  setForm((p) => ({
-                                    ...p,
-                                    qrGenerated: true,
-                                    last_qr_generated_at: ts,
-                                    qrCodeStatus: "Generated",
-                                  }));
-                                  Swal.fire({
-                                    title: "QR regenerated",
-                                    text: `Last generated: ${ts}`,
-                                    icon: "success",
-                                    confirmButtonText: "OK",
-                                  });
-                                }}
-                              >
-                                <FiRepeat size={16} /> Regenerate QR
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-
-                {activeTab === "scholarship" && (
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, alignItems: "start" }}>
-                      <div>
-                        <div style={{ fontWeight: 1000, color: "var(--text-secondary)", marginBottom: 10, fontSize: 13 }}>
-                          Scholarship Details
-                        </div>
-                        <div
-                          style={{
-                            padding: 14,
-                            borderRadius: 16,
-                            border: "1px solid rgba(148,163,184,0.28)",
-                            background: "rgba(255,255,255,0.45)",
-                          }}
-                        >
-                          <div className="grantee-form-grid">
-                            <div className="grantee-field">
-                              <div className="grantee-label">Award Number</div>
-                              <input
-                                className="grantee-input"
-                                value={form.award_number ?? ""}
-                                onChange={(e) => setForm((p) => ({ ...p, award_number: e.target.value }))}
-                                placeholder="Award Number"
-                              />
-                            </div>
-
-                            <div className="grantee-field">
-                              <div className="grantee-label">Scholarship Type</div>
-                              <select
-                                className="grantee-input"
-                                value={form.scholarship_type ?? ""}
-                                onChange={(e) => setForm((p) => ({ ...p, scholarship_type: e.target.value }))}
-                              >
-                                <option value="">Select…</option>
-                                <option value="TES">TES</option>
-                                <option value="TDP">TDP</option>
-                              </select>
-                            </div>
-
-                            <div className="grantee-field">
-                              <div className="grantee-label">Degree Program</div>
-                              <select
-                                className="grantee-input"
-                                value={form.course ?? ""}
-                                onChange={(e) => setForm((p) => ({ ...p, course: e.target.value }))}
-                              >
-                                <option value="">Select…</option>
-                                {degreeProgramOptions.map((d) => (
-                                  <option key={d} value={d}>
-                                    {d}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-
-                            <div className="grantee-field">
-                              <div className="grantee-label">Year Level</div>
-                              <input
-                                className="grantee-input"
-                                value={form.year_level ?? ""}
-                                onChange={(e) => setForm((p) => ({ ...p, year_level: e.target.value }))}
-                                placeholder="e.g. 2"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <div style={{ fontWeight: 1000, color: "var(--text-secondary)", marginBottom: 10, fontSize: 13 }}>
-                          Summary
-                        </div>
-                        <div
-                          style={{
-                            padding: 14,
-                            borderRadius: 16,
-                            border: "1px solid rgba(148,163,184,0.28)",
-                            background: "rgba(255,255,255,0.45)",
-                          }}
-                        >
-                          <div style={{ display: "grid", gap: 10 }}>
-                            <div>
-                              <div className="grantee-label">Award #</div>
-                              <div style={{ fontWeight: 1000, marginTop: 6 }}>{form.award_number || "—"}</div>
-                            </div>
-                            <div>
-                              <div className="grantee-label">Scholarship</div>
-                              <div style={{ fontWeight: 1000, marginTop: 6 }}>{String(form.scholarship_type || "").toUpperCase() || "—"}</div>
-                            </div>
-                            <div>
-                              <div className="grantee-label">Program</div>
-                              <div style={{ fontWeight: 1000, marginTop: 6 }}>{form.course || "—"}</div>
-                            </div>
-                            <div>
-                              <div className="grantee-label">Year</div>
-                              <div style={{ fontWeight: 1000, marginTop: 6 }}>{form.year_level || "—"}</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-
-                {activeTab === "attendance" && (
-                  <AttendanceTabEditor activeRowId={activeRowId} />
-                )}
-
-
               </div>
 
               <div className="grantee-edit-footer">
@@ -1427,20 +1156,34 @@ function GranteeDashboard() {
                   type="button"
                   className="grantee-primary"
                   onClick={() => {
-                    Swal.fire({
-                      title: "Are you sure?",
-                      text: "This will update the grantee record.",
-                      icon: "warning",
-                      showCancelButton: true,
-                      confirmButtonText: "Yes, update",
-                      cancelButtonText: "Cancel",
-                      reverseButtons: true,
-                    }).then((result) => {
-                      if (result.isConfirmed) saveUpdates();
-                    });
+                    if (activeRowId == null) {
+                      Swal.fire({
+                        title: "Add Grantee?",
+                        text: "This will add a new grantee record.",
+                        icon: "question",
+                        showCancelButton: true,
+                        confirmButtonText: "Yes, add",
+                        cancelButtonText: "Cancel",
+                        reverseButtons: true,
+                      }).then((result) => {
+                        if (result.isConfirmed) saveUpdates();
+                      });
+                    } else {
+                      Swal.fire({
+                        title: "Save Changes?",
+                        text: "This will update the grantee record.",
+                        icon: "question",
+                        showCancelButton: true,
+                        confirmButtonText: "Yes, save",
+                        cancelButtonText: "Cancel",
+                        reverseButtons: true,
+                      }).then((result) => {
+                        if (result.isConfirmed) saveUpdates();
+                      });
+                    }
                   }}
                 >
-                  Save Changes
+                  {activeRowId ? "Save Changes" : "Add Grantee"}
                 </button>
               </div>
             </motion.div>
@@ -1453,4 +1196,3 @@ function GranteeDashboard() {
 }
 
 export default GranteeDashboard;
-

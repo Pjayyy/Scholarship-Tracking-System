@@ -64,13 +64,18 @@ function register(req, res) {
 
 async function login(req, res) {
   try {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
 
     if (!email || !password) {
       return res.json({
         status: "failed",
         message: "Missing fields",
       });
+    }
+
+    // Allow students to login with just their student_id (convert to full email)
+    if (!email.includes("@")) {
+      email = `${email}@scholarship.local`;
     }
 
     const [rows] = await db.query(

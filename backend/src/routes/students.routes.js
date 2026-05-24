@@ -10,12 +10,11 @@ const {
 
 const router = Router();
 
-router.post("/add-student", verifyToken, addStudent);
-router.post("/add-grantee", verifyToken, addGrantee);
+router.post("/", verifyToken, addGrantee);
 
-router.get("/students", verifyToken, listStudents);
-router.put("/students/:id", verifyToken, updateStudent);
-router.delete("/students/:id", verifyToken, deleteStudent);
+router.get("/", verifyToken, listStudents);
+router.put("/:id", verifyToken, updateStudent);
+router.delete("/:id", verifyToken, deleteStudent);
 
 module.exports = router;
 

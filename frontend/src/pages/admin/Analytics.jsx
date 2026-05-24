@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { FiActivity, FiBarChart2, FiPieChart, FiRefreshCcw } from "react-icons/fi";
+
 import API from "../../services/api";
 
 import {
@@ -21,7 +22,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineEleme
 function Analytics() {
   const [students, setStudents] = useState(0);
   const [users, setUsers] = useState(0);
-  const [attendance, setAttendance] = useState(0);
+
   const [riskData, setRiskData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,11 +39,11 @@ function Analytics() {
       if (statsRes.status === "fulfilled") {
         setStudents(statsRes.data?.students ?? 0);
         setUsers(statsRes.data?.users ?? 0);
-        setAttendance(statsRes.data?.attendance ?? 0);
+
       } else {
         setStudents(0);
         setUsers(0);
-        setAttendance(0);
+
       }
 
       // /forecast may not exist yet; keep UI functional.
@@ -91,31 +92,21 @@ function Analytics() {
   };
 
   const barData = {
-    labels: ["Scholars", "Users", "Attendance Today"],
+    labels: ["Scholars", "Users"],
     datasets: [
       {
         label: "System Overview",
-        data: [students, users, attendance],
-        backgroundColor: ["rgba(34,197,94,0.75)", "rgba(56,189,248,0.75)", "rgba(245,158,11,0.75)"],
-        borderColor: ["rgba(34,197,94,0.95)", "rgba(56,189,248,0.95)", "rgba(245,158,11,0.95)"],
+        data: [students, users],
+
+        backgroundColor: ["rgba(34,197,94,0.75)", "rgba(56,189,248,0.75)"],
+        borderColor: ["rgba(34,197,94,0.95)", "rgba(56,189,248,0.95)"],
+
         borderWidth: 1,
       },
     ],
   };
 
-  const lineData = {
-    labels: ["Mon", "Tue", "Wed", "Thu", "Fri"],
-    datasets: [
-      {
-        label: "Attendance Trend",
-        data: [12, 19, 8, 15, attendance],
-        borderColor: "rgba(56,189,248,0.95)",
-        backgroundColor: "rgba(56,189,248,0.12)",
-        tension: 0.35,
-        fill: true,
-      },
-    ],
-  };
+
 
   const pieData = {
     labels: ["Safe", "Warning", "At Risk"],
@@ -166,15 +157,7 @@ function Analytics() {
           </div>
           <div className="stat-value">{users}</div>
         </div>
-        <div className="stat-card stat-late">
-          <div className="stat-top">
-            <div className="stat-icon">
-              <FiPieChart />
-            </div>
-            <div className="stat-title">Attendance Today</div>
-          </div>
-          <div className="stat-value">{attendance}</div>
-        </div>
+
       </div>
 
       <div className="attendance-two-col">
@@ -199,15 +182,7 @@ function Analytics() {
         </div>
       </div>
 
-      <div className="card card-glass">
-        <div className="panel-head">
-          <div className="panel-title">
-            <FiActivity />
-            Attendance Trend
-          </div>
-        </div>
-        <Line data={lineData} options={commonOptions} />
-      </div>
+
     </div>
   );
 }

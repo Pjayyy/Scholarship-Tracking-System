@@ -112,11 +112,11 @@ function StudentNotifications() {
   const getTypeColor = (type) => {
     switch (type) {
       case "success":
-        return { bg: "#f0fdf4", border: "#22c55e", text: "#16a34a" };
+        return { bg: "rgba(var(--success), 0.05)", border: "var(--success)", text: "var(--success)" };
       case "warning":
-        return { bg: "#fffbeb", border: "#f59e0b", text: "#d97706" };
+        return { bg: "rgba(var(--warning), 0.05)", border: "var(--warning)", text: "var(--warning)" };
       case "info":
-        return { bg: "#f0f9ff", border: "#3b82f6", text: "#1d4ed8" };
+        return { bg: "rgba(var(--primary), 0.05)", border: "var(--primary)", text: "var(--primary)" };
       default:
         return { bg: "#f3f4f6", border: "#6b7280", text: "#374151" };
     }
@@ -164,14 +164,14 @@ function StudentNotifications() {
                   style={{
                     padding: "1rem 1.25rem",
                     borderRadius: "1rem",
-                    border: "1px solid rgba(59,130,246,0.25)",
-                    background: "#f0f9ff",
+                    border: "1px solid rgba(var(--primary), 0.2)",
+                    background: "rgba(var(--primary), 0.05)",
                   }}
                 >
                   <div
                     style={{
                       fontWeight: 800,
-                      color: "#1e40af",
+                      color: "var(--primary)",
                       marginBottom: "0.35rem",
                     }}
                   >
@@ -245,7 +245,7 @@ function StudentNotifications() {
               }}
               style={{
                 padding: "0.75rem 1.25rem",
-                background: "#3b82f6",
+                background: "var(--primary)",
                 color: "white",
                 border: "none",
                 borderRadius: "0.875rem",

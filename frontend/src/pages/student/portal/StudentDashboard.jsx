@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { FiAlertCircle, FiBarChart2, FiCheckCircle, FiTrendingUp } from "react-icons/fi";
+import API from "../../../services/api"; // Assuming API service is available
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 function StudentDashboard({ studentData }) {
@@ -20,39 +21,89 @@ function StudentDashboard({ studentData }) {
     { day: "Fri", present: 1, absent: 0 },
   ]);
 
+  const [announcements, setAnnouncements] = useState([]);
+  const [annLoading, setAnnLoading] = useState(true);
+  const [annError, setAnnError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      const token = localStorage.getItem("token");
+      const API_URL =
+        process.env.REACT_APP_API_URL ||
+        "http://127.0.0.1:5000";
+
+      setAnnLoading(true);
+      setAnnError(null);
+
+      try {
+        const res = await fetch(
+          `${API_URL}/student/announcements`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const json = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          throw new Error(json.message || "Could not load announcements");
+        }
+
+        if (!cancelled) {
+          setAnnouncements(json.data || []);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setAnnError(e.message || "Error");
+          setAnnouncements([]);
+        }
+      } finally {
+        if (!cancelled) setAnnLoading(false);
+      }
+    };
+
+    void run();
+
+    const t = setInterval(run, 60000); // Refresh every minute
+
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, []);
+
   const riskLevel = studentData?.forecastRisk || "Low";
-  const riskColor = riskLevel === "Low" ? "#22c55e" : riskLevel === "Moderate" ? "#f59e0b" : "#ef4444";
+  const riskColor = riskLevel === "Low" ? "#10b981" : riskLevel === "Moderate" ? "#f59e0b" : "#f43f5e";
 
   const chartTheme = useMemo(() => {
-    let isDark = true;
-    try {
-      isDark = document?.documentElement?.dataset?.theme !== "light";
-    } catch {
-      isDark = true;
-    }
-
     return {
-      axis: isDark ? "rgba(226,232,240,0.65)" : "rgba(71,85,105,0.7)",
-      grid: isDark ? "rgba(148,163,184,0.18)" : "rgba(15,23,42,0.06)",
-      tooltipBg: isDark ? "rgba(2,6,23,0.88)" : "rgba(255,255,255,0.96)",
-      tooltipBorder: isDark ? "rgba(148,163,184,0.22)" : "rgba(15,23,42,0.10)",
+      axis: "#64748b",
+      grid: "rgba(15,23,42,0.06)",
+      tooltipBg: "rgba(255,255,255,0.96)",
+      tooltipBorder: "rgba(15,23,42,0.10)",
     };
   }, []);
 
   const statsCards = useMemo(
     () => [
-      { title: "Attendance", value: `${studentData?.attendance ?? 87}%`, icon: FiBarChart2, gradient: "stat-scanned" },
+      { title: "Documents", value: `3 / 5`, icon: FiCheckCircle, gradient: "stat-scanned" },
       {
-        title: "Forecast Risk",
-        value: riskLevel,
+        title: "Compliance",
+        value: "Good",
         icon: FiTrendingUp,
         gradient: riskLevel === "Low" ? "stat-present" : riskLevel === "Moderate" ? "stat-late" : "stat-absent",
       },
-      { title: "QR Scans", value: studentData?.totalScans ?? 45, icon: FiCheckCircle, gradient: "stat-present" },
+      { title: "Renewal Status", value: "Upcoming", icon: FiTrendingUp, gradient: "stat-present" },
       { title: "Scholarship", value: studentData?.scholarshipStatus ?? "Active", icon: FiCheckCircle, gradient: "stat-scanned" },
     ],
     [riskLevel, studentData?.attendance, studentData?.scholarshipStatus, studentData?.totalScans]
   );
+
+  const recentAnnouncements = announcements.slice(0, 5);
 
   return (
     <div className="panel" style={{ padding: "1.25rem" }}>
@@ -110,56 +161,110 @@ function StudentDashboard({ studentData }) {
         })}
       </div>
 
-      <div className="attendance-two-col" style={{ marginBottom: "1.25rem" }}>
-        <motion.div className="card card-glass" initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.35 }}>
-          <div className="panel-head">
-            <div className="panel-title">
-              <FiBarChart2 />
-              Attendance Trend
-            </div>
-          </div>
-          <ResponsiveContainer width="100%" height={260}>
-            <LineChart data={attendanceData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
-              <XAxis dataKey="month" stroke={chartTheme.axis} />
-              <YAxis stroke={chartTheme.axis} />
-              <Tooltip
-                contentStyle={{
-                  background: chartTheme.tooltipBg,
-                  border: `1px solid ${chartTheme.tooltipBorder}`,
-                  borderRadius: 12,
-                }}
-              />
-              <Line type="monotone" dataKey="percentage" stroke="rgba(56,189,248,0.95)" strokeWidth={3} dot={{ fill: "rgba(56,189,248,0.95)", r: 4 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </motion.div>
+      <div className="attendance-two-col attendance-two-col--mobile" style={{ marginBottom: "1.25rem" }}>
 
-        <motion.div className="card card-glass" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.35 }}>
+        <motion.div
+          className="card card-glass"
+          initial={{ opacity: 0, x: -16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.35 }}
+        >
           <div className="panel-head">
             <div className="panel-title">
               <FiCheckCircle />
-              Weekly Summary
+              Scholarship Status
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={weeklyStats}>
-              <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
-              <XAxis dataKey="day" stroke={chartTheme.axis} />
-              <YAxis stroke={chartTheme.axis} />
-              <Tooltip
-                contentStyle={{
-                  background: chartTheme.tooltipBg,
-                  border: `1px solid ${chartTheme.tooltipBorder}`,
-                  borderRadius: 12,
+
+          <div
+            className="kvp"
+            style={{
+              borderRadius: 18,
+              padding: "1rem",
+              background: "rgba(2,6,23,0.25)",
+              border: "1px solid rgba(148,163,184,0.18)",
+            }}
+          >
+            <div className="kvp-label" style={{ marginBottom: 10 }}>
+              Current
+            </div>
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              <div
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: 999,
+                  background:
+                    studentData?.scholarshipStatus === "Active"
+                      ? "var(--success)"
+                      : studentData?.scholarshipStatus === "Warning"
+                        ? "#f59e0b"
+                        : "var(--danger)",
                 }}
               />
-              <Bar dataKey="present" stackId="a" fill="rgba(34,197,94,0.75)" />
-              <Bar dataKey="absent" stackId="a" fill="rgba(239,68,68,0.75)" />
-            </BarChart>
-          </ResponsiveContainer>
+              <div>
+                <div style={{ fontSize: "1.4rem", fontWeight: 900 }}>
+                  {studentData?.scholarshipStatus ?? "Active"}
+                </div>
+                <div className="hint" style={{ marginTop: 4 }}>
+                  Keep your requirements up to date.
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          className="card card-glass"
+          initial={{ opacity: 0, x: 16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.35 }}
+        >
+          <div className="panel-head">
+            <div className="panel-title">
+              <FiBarChart2 />
+              Latest Announcements
+            </div>
+          </div>
+
+          <div style={{ padding: "0.25rem 1rem 1rem" }}>
+            {annLoading ? (
+              <div className="hint" style={{ paddingTop: 8 }}>
+                Loading announcements...
+              </div>
+            ) : annError ? (
+              <div className="hint" style={{ paddingTop: 8, color: "#dc2626" }}>
+                Error loading announcements: {annError}
+              </div>
+            ) : recentAnnouncements.length === 0 ? (
+              <div className="hint" style={{ paddingTop: 8 }}>
+                No announcements yet.
+              </div>
+            ) : (
+              <div style={{ display: "grid", gap: 10, paddingTop: 8 }}>
+                {recentAnnouncements.map((a) => (
+                  <motion.div
+                    key={a.id} // Added motion.div for animation
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    style={{ borderRadius: 14, padding: "0.75rem 0.85rem", background: "rgba(var(--primary), 0.05)", border: "1px solid rgba(var(--primary), 0.1)" }}
+                  >
+                    <div style={{ fontWeight: 900, marginBottom: 4 }}>
+                      {a.title ?? "Announcement"}
+                    </div>
+                    <div className="hint" style={{ lineHeight: 1.35 }}>
+                      {(a.bodyText ?? a.body ?? "").slice(0, 120)}
+                      {(a.bodyText ?? a.body ?? "").length > 120 ? "..." : ""}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
         </motion.div>
       </div>
+
 
       <motion.div className="card card-glass" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
         <div className="panel-head">
@@ -194,20 +299,20 @@ function StudentDashboard({ studentData }) {
 
             <div className="kvp" style={{ borderRadius: 18 }}>
               <div className="kvp-label" style={{ marginBottom: 10 }}>
-                Performance Analysis
+                Requirement Progress
               </div>
               <div style={{ display: "grid", gap: 10 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                  <span className="hint">Attendance Rate</span>
-                  <strong style={{ color: "rgba(34,197,94,0.95)" }}>{studentData?.attendance ?? 87}%</strong>
+                  <span className="hint">Submission Completeness</span>
+                  <strong style={{ color: "var(--success)" }}>80%</strong>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
                   <span className="hint">Scholarship Retention</span>
-                  <strong style={{ color: "rgba(56,189,248,0.95)" }}>95%</strong>
+                  <strong style={{ color: "var(--primary)" }}>95%</strong>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
                   <span className="hint">Requirements Status</span>
-                  <strong style={{ color: "rgba(34,197,94,0.95)" }}>On Track</strong>
+                  <strong style={{ color: "var(--success)" }}>On Track</strong>
                 </div>
               </div>
             </div>
@@ -235,4 +340,3 @@ function StudentDashboard({ studentData }) {
 }
 
 export default StudentDashboard;
-

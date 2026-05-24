@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+﻿﻿import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "react-toastify";
 import {
@@ -20,12 +20,10 @@ import API from "../../services/api";
 import "../../styles/Notifications.css";
 
 const categoryMap = {
-  attendance: { label: "Attendance", icon: FaUserCheck, accent: "#38bdf8" },
-  forecast: { label: "Forecast", icon: FaChartLine, accent: "#6366f1" },
-  scholarship: { label: "Scholarship", icon: FaShieldAlt, accent: "#22c55e" },
-  system: { label: "System", icon: FaInfoCircle, accent: "#f59e0b" },
-  qr: { label: "QR Activity", icon: FaQrcode, accent: "#3b82f6" },
-  mqtt: { label: "MQTT Event", icon: FaBolt, accent: "#ef4444" },
+  forecast: { label: "Audit", icon: FaChartLine, accent: "var(--secondary)" },
+  scholarship: { label: "Scholarship", icon: FaShieldAlt, accent: "var(--success)" },
+  system: { label: "System", icon: FaInfoCircle, accent: "var(--warning)" },
+  docs: { label: "Documents", icon: FaClipboardList, accent: "var(--primary)" },
 };
 
 const priorityOrder = { high: 0, medium: 1, low: 2 };
@@ -34,7 +32,6 @@ const filterOptions = [
   { value: "all", label: "All" },
   { value: "unread", label: "Unread" },
   { value: "attendance", label: "Attendance" },
-  { value: "forecast", label: "Forecast" },
   { value: "scholarship", label: "Scholarship" },
   { value: "system", label: "System" },
 ];
@@ -46,17 +43,6 @@ const sortOptions = [
 ];
 
 const seedNotifications = [
-  {
-    id: "notif-001",
-    category: "attendance",
-    priority: "low",
-    title: "Attendance recorded successfully for Maria Santos",
-    message: "QR attendance scan completed in the campus lobby.",
-    details:
-      "Maria Santos was marked present after a verified QR scan. Attendance is synced with the school ledger.",
-    timestamp: "2026-05-10T06:30:00.000Z",
-    unread: true,
-  },
   {
     id: "notif-002",
     category: "forecast",
@@ -80,17 +66,6 @@ const seedNotifications = [
     unread: true,
   },
   {
-    id: "notif-004",
-    category: "qr",
-    priority: "low",
-    title: "QR attendance scan completed",
-    message: "A QR session was validated for Rodrigo Alvarez at 09:42 AM.",
-    details:
-      "Scan details saved and attendance updated instantly. Student badge used campus network credentials.",
-    timestamp: "2026-05-10T09:42:00.000Z",
-    unread: false,
-  },
-  {
     id: "notif-005",
     category: "system",
     priority: "medium",
@@ -100,17 +75,6 @@ const seedNotifications = [
       "Model recalibration completed at 08:20 AM. Performance metrics improved by 3.8%.",
     timestamp: "2026-05-10T10:03:00.000Z",
     unread: false,
-  },
-  {
-    id: "notif-006",
-    category: "mqtt",
-    priority: "high",
-    title: "Live MQTT event: attendance gateway connected",
-    message: "scholarship/attendance received a fresh telemetry payload.",
-    details:
-      "The live attendance gateway is active and will stream updates to the notification center.",
-    timestamp: "2026-05-10T10:16:00.000Z",
-    unread: true,
   },
 ];
 
@@ -133,7 +97,7 @@ function buildNotification(payload) {
 
   return {
     id: payload.id || `notif-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-    category,
+    category: category === "attendance" || category === "qr" ? "docs" : category,
     priority: payload.priority || (category === "forecast" || category === "mqtt" ? "high" : "medium"),
     title,
     message: payload.message || payload.details || "You have a new update in the scholarship system.",
@@ -146,12 +110,12 @@ function buildNotification(payload) {
 function createLiveNotification() {
   const templates = [
     {
-      category: "attendance",
+      category: "docs",
       priority: "medium",
-      title: "Attendance threshold alert for classroom C2",
-      message: "More than 10 students have toggled their attendance status in the last 20 minutes.",
+      title: "Document submission portal updated",
+      message: "New forms for the upcoming semester are now available.",
       details:
-        "The live monitor flagged a rapid attendance change. Review the classroom details for potential anomalies.",
+        "Students are notified to upload their latest grades and registration forms via the portal.",
     },
     {
       category: "forecast",
@@ -168,14 +132,6 @@ function createLiveNotification() {
       message: "Scholarship status moved to approved and notification email is queued.",
       details:
         "Daniel's award letter is now ready to be delivered through the student portal.",
-    },
-    {
-      category: "qr",
-      priority: "low",
-      title: "QR scan received for lab attendance",
-      message: "A QR scan completed successfully in Science Building 4.",
-      details:
-        "Live QR traffic is being synchronized with attendance logs and system alerts.",
     },
     {
       category: "mqtt",
@@ -397,9 +353,9 @@ function Notifications() {
       >
         <div className="hero-copy">
           <div>
-            <div className="hero-label">Announcements & Notifications</div>
-            <h1>CHED announcements plus live scholarship alerts for your team.</h1>
-            <p>
+            <div className="kicker" style={{ color: 'white', marginBottom: '0.5rem', opacity: 0.9 }}>Scholarship Management</div>
+            <h1 style={{ color: 'white', fontSize: '2.5rem', lineHeight: 1.1, marginBottom: '1rem' }}>Audit logs and system events.</h1>
+            <p style={{ color: 'rgba(255,255,255,0.85)', maxWidth: '600px', fontSize: '1.1rem' }}>
               View official CHED announcements, attendance/forecast signals, and system events in one place.
             </p>
           </div>
@@ -562,8 +518,8 @@ function Notifications() {
                         <span
                           className="priority-chip"
                           style={{
-                            background: hasError ? "#fee2e2" : ok ? "#dcfce7" : "#fffbeb",
-                            color: hasError ? "#b91c1c" : ok ? "#166534" : "#92400e",
+                            background: hasError ? "rgba(239, 68, 68, 0.1)" : ok ? "rgba(16, 185, 129, 0.1)" : "rgba(245, 158, 11, 0.1)",
+                            color: hasError ? "#ef4444" : ok ? "#10b981" : "#f59e0b",
                           }}
                           title={hasError ? a.dispatchError : ok ? "Email dispatched" : "Pending dispatch"}
                         >
@@ -657,7 +613,7 @@ function Notifications() {
               </div>
               <h3>No notifications match your current view.</h3>
               <p>
-                Try another filter, refresh the feed, or wait for live MQTT attendance and forecast events to arrive.
+                Try another filter, refresh the feed, or wait for document and audit events to arrive.
               </p>
             </div>
           ) : (

@@ -40,7 +40,7 @@ function QRScanner() {
   }, [busy]);
 
   return (
-    <div className="panel">
+    <div className="panel panel--qr">
       <section className="page-hero">
         <div className="page-hero__row">
           <div>
@@ -50,6 +50,8 @@ function QRScanner() {
               Scan a student QR code to show official announcements and scholarship requirements.
             </div>
           </div>
+
+          <div className="qr-hero-art" aria-hidden="true" />
         </div>
       </section>
 

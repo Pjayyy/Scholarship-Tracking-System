@@ -13,8 +13,15 @@ import StudentSettings from "./portal/StudentSettings.jsx";
 
 function StudentPortal({ page }) {
   const [studentData, setStudentData] = useState(null);
+  const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+
+  const refreshPortal = () => {
+    setRefreshTrigger((prev) => prev + 1);
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -33,8 +40,8 @@ function StudentPortal({ page }) {
           return;
         }
 
-        const API_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:5000";
-        const res = await fetch(`${API_URL}/student/me`, {
+        const API_URL = process.env.REACT_APP_API_URL || "http://192.168.0.244:5000";
+        const meRes = await fetch(`${API_URL}/student/me`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -42,13 +49,29 @@ function StudentPortal({ page }) {
           },
         });
 
-        const payload = await res.json();
+        const mePayload = await meRes.json();
 
-        if (!res.ok) {
-          throw new Error(payload?.message || "Failed to load student profile");
+        if (!meRes.ok) {
+          throw new Error(mePayload?.message || "Failed to load student profile");
         }
 
-        const d = payload?.data || {};
+        const d = mePayload?.data || {};
+
+        const annRes = await fetch(`${API_URL}/student/announcements`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const annPayload = await annRes.json();
+        if (!annRes.ok) {
+          throw new Error(annPayload?.message || "Failed to load announcements");
+        }
+
+        const annList = annPayload?.data || [];
+
 
         // Map backend fields -> UI expected shape.
         // Attendance, forecastRisk, totalScans are not provided by /student/me yet in this app,
@@ -77,6 +100,7 @@ function StudentPortal({ page }) {
 
         if (mounted) {
           setStudentData(mapped);
+          setAnnouncements(annList);
         }
       } catch (e) {
         if (!mounted) return;
@@ -92,7 +116,7 @@ function StudentPortal({ page }) {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [refreshTrigger]);
 
   const CurrentPage = useMemo(() => {
     if (page === "student-profile") return StudentProfile;
@@ -137,7 +161,11 @@ function StudentPortal({ page }) {
         exit={{ opacity: 0, y: 12 }}
         transition={{ duration: 0.25 }}
       >
-        <CurrentPage studentData={studentData} />
+        <CurrentPage
+          studentData={studentData}
+          announcements={announcements}
+          onProfileUpdate={refreshPortal}
+        />
       </motion.div>
     </AnimatePresence>
   );

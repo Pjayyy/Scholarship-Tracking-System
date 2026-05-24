@@ -126,29 +126,36 @@ async function updateStudent(req, res) {
       course,
       year_level,
       scholarship_type,
+      sex,
+      birthdate,
+      qr_generated,
     } = req.body;
 
     await db.query(
       `
         UPDATE students
         SET
-          student_id = ?,
-          award_number = ?,
-          qr_code = ?,
-          name = ?,
-          course = ?,
-          year_level = ?,
-          scholarship_type = ?
+          student_id = COALESCE(?, student_id),
+          award_number = COALESCE(?, award_number),
+          qr_code = COALESCE(?, qr_code),
+          name = COALESCE(?, name),
+          course = COALESCE(?, course),
+          year_level = COALESCE(?, year_level),
+          scholarship_type = COALESCE(?, scholarship_type),
+          sex = COALESCE(?, sex),
+          birthdate = COALESCE(?, birthdate)
         WHERE id = ?
       `,
       [
-        student_id,
-        award_number,
-        qr_code,
-        name,
-        course,
-        year_level,
-        scholarship_type,
+        student_id || null,
+        award_number || null,
+        qr_code || null,
+        name || null,
+        course || null,
+        year_level || null,
+        scholarship_type || null,
+        sex || null,
+        birthdate || null,
         id,
       ]
     );
@@ -164,7 +171,25 @@ async function updateStudent(req, res) {
 async function deleteStudent(req, res) {
   try {
     const { id } = req.params;
+
+    // First get the student_id to delete related notifications
+    const [students] = await db.query(
+      `SELECT student_id FROM students WHERE id = ?`,
+      [id]
+    );
+
+    if (students.length === 0) {
+      return res.status(404).json({ status: "error", message: "Student not found" });
+    }
+
+    const studentId = students[0].student_id;
+
+    // Delete related notifications first
+    await db.query(`DELETE FROM notifications WHERE student_id = ?`, [studentId]);
+
+    // Now delete the student
     await db.query(`DELETE FROM students WHERE id = ?`, [id]);
+
     return res.json({ status: "success", message: "Student deleted" });
   } catch (err) {
     // eslint-disable-next-line no-console

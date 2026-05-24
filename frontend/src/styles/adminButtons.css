@@ -1,0 +1,28 @@
+.grantee-admin-cta-btn{
+  transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.grantee-admin-cta-btn:hover{
+  transform: translateY(-1px);
+}
+
+.grantee-admin-cta-btn:focus-visible{
+  outline: 3px solid rgba(59,130,246,0.45);
+  outline-offset: 2px;
+}
+
+.grantee-admin-icon-btn{
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, border-color 160ms ease;
+  position: relative;
+}
+
+.grantee-admin-icon-btn:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(15,23,42,0.18);
+}
+
+.grantee-admin-icon-btn:focus-visible{
+  outline: 3px solid rgba(59,130,246,0.45);
+  outline-offset: 2px;
+}
+

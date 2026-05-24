@@ -6,12 +6,13 @@ import {
   FaHome,
   FaQrcode,
   FaRegChartBar,
-  FaUniversity,
   FaUser,
   FaUserGraduate,
   FaFileAlt,
   FaCog,
 } from "react-icons/fa";
+
+const aclcLogoSrc = `${process.env.PUBLIC_URL}/aclc-tacloban-logo.png`;
 
 const adminNavItems = [
   { page: "dashboard", label: "Dashboard", icon: FaHome },
@@ -40,14 +41,11 @@ function Sidebar({ page, setPage, role }) {
 
   return (
     <div className="sidebar">
-      <div className="sidebar-brand">
-        <span aria-hidden="true">
-          <FaUniversity />
-        </span>
-        <div>
-          <small className="kicker">Scholarship Intelligence</small>
-          <strong>Smart Tracking</strong>
-          <small>Monitoring &amp; Analytics</small>
+      <div className="sidebar-portal">
+        <img className="sidebar-logo" src={aclcLogoSrc} alt="ACLC College of Tacloban" />
+        <div className="sidebar-portal-copy">
+          <div className="sidebar-portal-title">ACLC COLLEGE OF TACLOBAN</div>
+          <div className="sidebar-portal-subtitle">SCHOLARSHIP PORTAL</div>
         </div>
       </div>
 
@@ -69,7 +67,15 @@ function Sidebar({ page, setPage, role }) {
       </nav>
 
       <div className="sidebar-footer">
+        <div className="sidebar-status-card">
+          <div className="sidebar-status-top">
+            <span className="sidebar-status-dot" aria-hidden="true" />
+            <div className="sidebar-status-title">System Status</div>
+          </div>
+          <div className="sidebar-status-sub">All systems operational</div>
+        </div>
         <small>Real-time monitoring UI</small>
+        <small>© 2026 ACLC College of Tacloban</small>
       </div>
     </div>
   );

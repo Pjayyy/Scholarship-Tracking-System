@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ScholarshipSystem</string>
+    <string name="title_activity_main">ScholarshipSystem</string>
+    <string name="package_name">com.yourcompany.scholarship</string>
+    <string name="custom_url_scheme">com.yourcompany.scholarship</string>
+</resources>

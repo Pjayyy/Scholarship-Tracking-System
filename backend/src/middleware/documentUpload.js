@@ -12,13 +12,19 @@ const documentUpload = multer({
       "image/bmp",
       "image/heif",
       "image/heic",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel",
+      "text/csv",
     ]);
 
-    if (allowed.has(file.mimetype)) return cb(null, true);
+    const ext = file.originalname.split(".").pop()?.toLowerCase() || "";
+    const csvExtensions = new Set(["xlsx", "xls", "csv"]);
+
+    if (allowed.has(file.mimetype) || csvExtensions.has(ext)) return cb(null, true);
 
     cb(
       new Error(
-        "Unsupported type. Use PDF or common image formats (JPEG, PNG, TIFF, BMP, HEIF)."
+        "Unsupported type. Use PDF, images, or Excel/CSV files (JPEG, PNG, TIFF, BMP, HEIF, XLSX, XLS, CSV)."
       )
     );
   },

@@ -1,33 +1,118 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FiEdit2, FiSave, FiX, FiUpload } from "react-icons/fi";
+import { FiEdit2, FiSave, FiX, FiUpload, FiUser } from "react-icons/fi";
+import axios from "axios";
+import { toast } from "react-toastify";
 
-function StudentProfile({ studentData }) {
+function StudentProfile({ onProfileUpdate }) {
+  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState(studentData || {});
+  const [isSaving, setIsSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    student_id: "",
+    name: "",
+    sex: "",
+    birthdate: "",
+    contact_number: "",
+    course: "",
+    year_level: "",
+    scholarship_type: "",
+    scholarship_status: "",
+    award_number: "",
+    email: "",
+  });
+
+  // Fetch profile data on mount
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const res = await axios.get("http://localhost:5000/student/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.data.status === "success" && res.data.data) {
+        const data = res.data.data;
+        setFormData({
+          student_id: data.student_id || "",
+          name: data.name || "",
+          sex: data.sex || "",
+          birthdate: data.birthdate || "",
+          contact_number: data.contactNumber || "",
+          course: data.program || data.course || "",
+          year_level: data.yearLevel || data.year_level || "",
+          scholarship_type: data.scholarshipType || data.scholarship_type || "",
+          scholarship_status: data.scholarshipStatus || data.scholarship_status || "",
+          award_number: data.awardNumber || data.award_number || "",
+          email: data.email || "",
+        });
+      }
+    } catch (err) {
+      console.error("Failed to fetch profile:", err);
+      toast.error("Failed to load profile data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    setIsSaving(true);
+    const token = localStorage.getItem("token");
+
+    try {
+      const res = await axios.put(
+        "http://localhost:5000/student/me",
+        {
+          name: formData.name,
+          sex: formData.sex,
+          birthdate: formData.birthdate,
+          contact_number: formData.contact_number,
+          course: formData.course,
+          year_level: formData.year_level,
+          email: formData.email,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (res.data.status === "success") {
+        toast.success("Profile updated successfully!");
+        setIsEditing(false);
+        // Refresh portal data for all pages
+        if (onProfileUpdate) onProfileUpdate();
+        // Refresh to show updated data
+        fetchProfile();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update profile");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
     setIsEditing(false);
-    // API call would go here
+    fetchProfile(); // Reset to server data
   };
 
-  const profileFields = [
-    { label: "Full Name", key: "name", type: "text" },
-    { label: "Student ID", key: "studentId", type: "text", readonly: true },
-    { label: "Award Number", key: "awardNumber", type: "text", readonly: true },
-    { label: "Email", key: "email", type: "email" },
-    { label: "Phone", key: "contactNumber", type: "tel" },
-    { label: "Degree Program", key: "program", type: "text", readonly: true },
-    { label: "Year Level", key: "yearLevel", type: "text", readonly: true },
-    { label: "Birthdate", key: "birthdate", type: "date" },
-    { label: "Guardian Name", key: "guardian", type: "text" },
-    { label: "Academic Year", key: "academicYear", type: "text", readonly: true },
-  ];
+  if (loading) {
+    return (
+      <div style={{ padding: "2rem", textAlign: "center" }}>
+        <p>Loading profile...</p>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: "2rem" }}>
@@ -55,34 +140,28 @@ function StudentProfile({ studentData }) {
           <h2 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700 }}>
             My Profile
           </h2>
-          <button
-            onClick={() => setIsEditing(!isEditing)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              padding: "0.75rem 1.25rem",
-              background: isEditing ? "#ef4444" : "#3b82f6",
-              color: "white",
-              border: "none",
-              borderRadius: "0.875rem",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            {isEditing ? (
-              <>
-                <FiX size={18} /> Cancel
-              </>
-            ) : (
-              <>
-                <FiEdit2 size={18} /> Edit Profile
-              </>
-            )}
-          </button>
+          {!isEditing && (
+            <button
+              onClick={() => setIsEditing(true)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.75rem 1.25rem",
+                background: "#3b82f6",
+                color: "white",
+                border: "none",
+                borderRadius: "0.875rem",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              <FiEdit2 size={18} /> Edit Profile
+            </button>
+          )}
         </div>
 
-        {/* Profile Picture */}
+        {/* Avatar Section */}
         <div
           style={{
             display: "flex",
@@ -93,9 +172,7 @@ function StudentProfile({ studentData }) {
             borderBottom: "1px solid rgba(0,0,0,0.1)",
           }}
         >
-          <img
-            src={formData.avatar}
-            alt="Profile"
+          <div
             style={{
               width: "150px",
               height: "150px",
@@ -103,31 +180,20 @@ function StudentProfile({ studentData }) {
               marginBottom: "1rem",
               border: "4px solid #3b82f6",
               boxShadow: "0 10px 30px rgba(59, 130, 246, 0.3)",
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
-          />
-          {isEditing && (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                padding: "0.75rem 1.25rem",
-                background: "#f3f4f6",
-                color: "#3b82f6",
-                border: "1px solid #e5e7eb",
-                borderRadius: "0.875rem",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              <FiUpload size={18} /> Change Picture
-            </motion.button>
-          )}
+          >
+            <FiUser size={60} color="white" />
+          </div>
+          <p style={{ color: "#6b7280", fontSize: "0.9rem", margin: 0 }}>
+            Profile Photo
+          </p>
         </div>
 
-        {/* Profile Fields */}
+        {/* Profile Fields - Editable */}
         <div
           style={{
             display: "grid",
@@ -135,45 +201,232 @@ function StudentProfile({ studentData }) {
             gap: "1.5rem",
           }}
         >
-          {profileFields.map((field) => (
-            <div key={field.key}>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "0.9rem",
-                  fontWeight: 600,
-                  marginBottom: "0.5rem",
-                  color: "#374151",
-                }}
-              >
-                {field.label}
-              </label>
-              <input
-                type={field.type}
-                name={field.key}
-                value={formData[field.key] || ""}
-                onChange={handleInputChange}
-                disabled={field.readonly || !isEditing}
-                style={{
-                  width: "100%",
-                  padding: "0.875rem 1rem",
-                  borderRadius: "0.875rem",
-                  border: `1px solid ${
-                    field.readonly || !isEditing
-                      ? "#e5e7eb"
-                      : "#d1d5db"
-                  }`,
-                  background: field.readonly || !isEditing ? "#f9fafb" : "white",
-                  fontFamily: "inherit",
-                  fontSize: "0.95rem",
-                  cursor: field.readonly || !isEditing ? "default" : "text",
-                }}
-              />
-            </div>
-          ))}
+          {/* Full Name - Editable */}
+          <div>
+            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 600, marginBottom: "0.5rem", color: "#374151" }}>
+              Full Name
+            </label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              disabled={!isEditing}
+              style={{
+                width: "100%",
+                padding: "0.875rem 1rem",
+                borderRadius: "0.875rem",
+                border: `1px solid ${isEditing ? "#d1d5db" : "#e5e7eb"}`,
+                background: isEditing ? "white" : "#f9fafb",
+                fontFamily: "inherit",
+                fontSize: "0.95rem",
+                cursor: isEditing ? "text" : "default",
+              }}
+            />
+          </div>
+
+          {/* Email - Editable */}
+          <div>
+            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 600, marginBottom: "0.5rem", color: "#374151" }}>
+              Email Address
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              disabled={!isEditing}
+              placeholder="student@example.com"
+              style={{
+                width: "100%",
+                padding: "0.875rem 1rem",
+                borderRadius: "0.875rem",
+                border: `1px solid ${isEditing ? "#d1d5db" : "#e5e7eb"}`,
+                background: isEditing ? "white" : "#f9fafb",
+                fontFamily: "inherit",
+                fontSize: "0.95rem",
+                cursor: isEditing ? "text" : "default",
+              }}
+            />
+          </div>
+
+          {/* Student ID - Read Only */}
+          <div>
+            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 600, marginBottom: "0.5rem", color: "#374151" }}>
+              Student ID
+            </label>
+            <input
+              type="text"
+              value={formData.student_id}
+              disabled
+              style={{
+                width: "100%",
+                padding: "0.875rem 1rem",
+                borderRadius: "0.875rem",
+                border: "1px solid #e5e7eb",
+                background: "#f9fafb",
+                fontFamily: "inherit",
+                fontSize: "0.95rem",
+                cursor: "not-allowed",
+                color: "#9ca3af",
+              }}
+            />
+          </div>
+
+          {/* Sex - Editable */}
+          <div>
+            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 600, marginBottom: "0.5rem", color: "#374151" }}>
+              Sex
+            </label>
+            <select
+              name="sex"
+              value={formData.sex}
+              onChange={handleInputChange}
+              disabled={!isEditing}
+              style={{
+                width: "100%",
+                padding: "0.875rem 1rem",
+                borderRadius: "0.875rem",
+                border: `1px solid ${isEditing ? "#d1d5db" : "#e5e7eb"}`,
+                background: isEditing ? "white" : "#f9fafb",
+                fontFamily: "inherit",
+                fontSize: "0.95rem",
+                cursor: isEditing ? "text" : "default",
+              }}
+            >
+              <option value="">Select...</option>
+              <option value="M">Male</option>
+              <option value="F">Female</option>
+            </select>
+          </div>
+
+          {/* Birthdate - Editable */}
+          <div>
+            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 600, marginBottom: "0.5rem", color: "#374151" }}>
+              Birthdate
+            </label>
+            <input
+              type="date"
+              name="birthdate"
+              value={formData.birthdate}
+              onChange={handleInputChange}
+              disabled={!isEditing}
+              style={{
+                width: "100%",
+                padding: "0.875rem 1rem",
+                borderRadius: "0.875rem",
+                border: `1px solid ${isEditing ? "#d1d5db" : "#e5e7eb"}`,
+                background: isEditing ? "white" : "#f9fafb",
+                fontFamily: "inherit",
+                fontSize: "0.95rem",
+                cursor: isEditing ? "text" : "default",
+              }}
+            />
+          </div>
+
+          {/* Contact Number - Editable */}
+          <div>
+            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 600, marginBottom: "0.5rem", color: "#374151" }}>
+              Phone / Contact Number
+            </label>
+            <input
+              type="tel"
+              name="contact_number"
+              value={formData.contact_number}
+              onChange={handleInputChange}
+              disabled={!isEditing}
+              placeholder="Enter phone number"
+              style={{
+                width: "100%",
+                padding: "0.875rem 1rem",
+                borderRadius: "0.875rem",
+                border: `1px solid ${isEditing ? "#d1d5db" : "#e5e7eb"}`,
+                background: isEditing ? "white" : "#f9fafb",
+                fontFamily: "inherit",
+                fontSize: "0.95rem",
+                cursor: isEditing ? "text" : "default",
+              }}
+            />
+          </div>
+
+          {/* Course - Read Only */}
+          <div>
+            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 600, marginBottom: "0.5rem", color: "#374151" }}>
+              Degree Program
+            </label>
+            <input
+              type="text"
+              value={formData.course}
+              disabled
+              style={{
+                width: "100%",
+                padding: "0.875rem 1rem",
+                borderRadius: "0.875rem",
+                border: "1px solid #e5e7eb",
+                background: "#f9fafb",
+                fontFamily: "inherit",
+                fontSize: "0.95rem",
+                cursor: "not-allowed",
+                color: "#9ca3af",
+              }}
+            />
+          </div>
+
+          {/* Year Level - Editable */}
+          <div>
+            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 600, marginBottom: "0.5rem", color: "#374151" }}>
+              Year Level
+            </label>
+            <select
+              name="year_level"
+              value={formData.year_level}
+              onChange={handleInputChange}
+              disabled={!isEditing}
+              style={{
+                width: "100%",
+                padding: "0.875rem 1rem",
+                borderRadius: "0.875rem",
+                border: `1px solid ${isEditing ? "#d1d5db" : "#e5e7eb"}`,
+                background: isEditing ? "white" : "#f9fafb",
+                fontFamily: "inherit",
+                fontSize: "0.95rem",
+                cursor: isEditing ? "text" : "default",
+              }}
+            >
+              <option value="">Select...</option>
+              <option value="1">1st Year</option>
+              <option value="2">2nd Year</option>
+              <option value="3">3rd Year</option>
+              <option value="4">4th Year</option>
+              <option value="5">5th Year</option>
+            </select>
+          </div>
+
+          {/* Award Number - Read Only */}
+          <div>
+            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 600, marginBottom: "0.5rem", color: "#374151" }}>
+              Award Number
+            </label>
+            <input
+              type="text"
+              value={formData.award_number || "—"}
+              disabled
+              style={{
+                width: "100%",
+                padding: "0.875rem 1rem",
+                borderRadius: "0.875rem",
+                border: "1px solid #e5e7eb",
+                background: "#f9fafb",
+                fontFamily: "inherit",
+                fontSize: "0.95rem",
+                cursor: "not-allowed",
+                color: "#9ca3af",
+              }}
+            />
+          </div>
         </div>
 
-        {/* Status Info */}
+        {/* Status Info - Read Only */}
         <div
           style={{
             marginTop: "2rem",
@@ -184,36 +437,25 @@ function StudentProfile({ studentData }) {
           }}
         >
           <h3 style={{ margin: "0 0 1rem", fontSize: "1.05rem", fontWeight: 700 }}>
-            📌 Scholarship Information
+            Scholarship Information
           </h3>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
             <div>
-              <span style={{ color: "#6b7280", fontSize: "0.9rem" }}>
-                Scholarship Type
-              </span>
+              <span style={{ color: "#6b7280", fontSize: "0.9rem" }}>Scholarship Type</span>
               <div style={{ fontSize: "1.1rem", fontWeight: 700, marginTop: "0.25rem" }}>
-                {formData.scholarshipType}
+                {formData.scholarship_type || "—"}
               </div>
             </div>
             <div>
-              <span style={{ color: "#6b7280", fontSize: "0.9rem" }}>
-                Status
-              </span>
+              <span style={{ color: "#6b7280", fontSize: "0.9rem" }}>Status</span>
               <div style={{ fontSize: "1.1rem", fontWeight: 700, marginTop: "0.25rem", color: "#22c55e" }}>
-                ✓ {formData.scholarshipStatus}
-              </div>
-            </div>
-            <div>
-              <span style={{ color: "#6b7280", fontSize: "0.9rem" }}>
-                Academic Year
-              </span>
-              <div style={{ fontSize: "1.1rem", fontWeight: 700, marginTop: "0.25rem" }}>
-                {formData.academicYear}
+                {formData.scholarship_status || "Active"}
               </div>
             </div>
           </div>
         </div>
 
+        {/* Action Buttons */}
         {isEditing && (
           <div
             style={{
@@ -224,7 +466,8 @@ function StudentProfile({ studentData }) {
             }}
           >
             <button
-              onClick={() => setIsEditing(false)}
+              onClick={handleCancel}
+              disabled={isSaving}
               style={{
                 padding: "0.875rem 1.5rem",
                 background: "#f3f4f6",
@@ -232,7 +475,7 @@ function StudentProfile({ studentData }) {
                 border: "1px solid #d1d5db",
                 borderRadius: "0.875rem",
                 fontWeight: 600,
-                cursor: "pointer",
+                cursor: isSaving ? "not-allowed" : "pointer",
               }}
             >
               Cancel
@@ -241,6 +484,7 @@ function StudentProfile({ studentData }) {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleSave}
+              disabled={isSaving}
               style={{
                 padding: "0.875rem 1.5rem",
                 background: "#22c55e",
@@ -248,13 +492,14 @@ function StudentProfile({ studentData }) {
                 border: "none",
                 borderRadius: "0.875rem",
                 fontWeight: 600,
-                cursor: "pointer",
+                cursor: isSaving ? "not-allowed" : "pointer",
                 display: "flex",
                 alignItems: "center",
                 gap: "0.5rem",
+                opacity: isSaving ? 0.7 : 1,
               }}
             >
-              <FiSave size={18} /> Save Changes
+              <FiSave size={18} /> {isSaving ? "Saving..." : "Save Changes"}
             </motion.button>
           </div>
         )}
