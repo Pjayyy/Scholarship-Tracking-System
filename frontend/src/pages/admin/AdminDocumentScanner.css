@@ -1,1 +1,29 @@
-/* Reserved for future page-specific overrides (currently using global index.css). */
+/* Page-specific overrides for AdminDocumentScan (card-glass uses a light surface). */
+
+.document-scan-upload {
+  color: #0f172a; /* slate-900 */
+}
+
+.document-scan-upload__title {
+  color: #0f172a;
+}
+
+.document-scan-upload__help {
+  color: rgba(15, 23, 42, 0.72);
+}
+
+.document-scan-upload__help code {
+  color: #0f172a;
+  background: rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.4rem;
+}
+
+.document-scan-results {
+  --text-primary: #0f172a;
+  --text-secondary: rgba(15, 23, 42, 0.62);
+  --surface-2: rgba(15, 23, 42, 0.04);
+  --surface-border: rgba(15, 23, 42, 0.12);
+  color: var(--text-primary);
+}

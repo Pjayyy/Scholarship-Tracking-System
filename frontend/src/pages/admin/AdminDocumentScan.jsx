@@ -5,6 +5,7 @@ import {
 } from "react-icons/fi";
 import axios from "axios";
 import Swal from "sweetalert2";
+import "./AdminDocumentScanner.css";
 
 function AdminDocumentScan() {
   const inputRef = useRef(null);
@@ -149,8 +150,8 @@ function AdminDocumentScan() {
       </div>
 
       {/* Upload Card */}
-      <div className="card card-glass" style={{ padding: "1.5rem", marginBottom: "1.25rem" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", fontWeight: 800, marginBottom: "1rem" }}>
+      <div className="card card-glass document-scan-upload" style={{ padding: "1.5rem", marginBottom: "1.25rem" }}>
+        <div className="document-scan-upload__title" style={{ display: "flex", alignItems: "center", gap: "0.6rem", fontWeight: 800, marginBottom: "1rem" }}>
           <FiCpu aria-hidden />
           Upload &amp; Scan
         </div>
@@ -173,9 +174,22 @@ function AdminDocumentScan() {
             className="btn"
             disabled={busy}
             onClick={() => inputRef.current?.click()}
+            style={{
+              // Force high contrast regardless of global .btn styles
+              background: "linear-gradient(135deg, #6C63FF 0%, #4F46E5 55%, #0ea5e9 100%)",
+              color: "#ffffff",
+              border: busy ? "1px solid rgba(255,255,255,0.25)" : "1px solid rgba(108, 99, 255, 0.35)",
+              opacity: busy ? 0.75 : 1,
+              cursor: busy ? "not-allowed" : "pointer",
+              boxShadow: "0 4px 15px rgba(108, 99, 255, 0.35)",
+            }}
           >
-            <FiUpload aria-hidden />
-            {busy ? "Scanning…" : "Choose file (PDF, Image, Excel, CSV)"}
+            <span style={{ display: "inline-flex", alignItems: "center" }}>
+              <FiUpload aria-hidden />
+            </span>
+            <span style={{ marginLeft: 6, color: "#ffffff" }}>
+              {busy ? "Scanning..." : "Choose file (PDF, Image, Excel, CSV)"}
+            </span>
           </button>
 
           {result && (
@@ -190,7 +204,7 @@ function AdminDocumentScan() {
           )}
         </div>
 
-        <p style={{ marginTop: "1rem", fontSize: "0.88rem", color: "var(--text-secondary)" }}>
+        <p className="document-scan-upload__help" style={{ marginTop: "1rem", fontSize: "0.88rem" }}>
           Supports PDF, JPEG, PNG, TIFF, BMP images — plus Excel (.xlsx, .xls) and CSV files.
           Configure <code>DOCUMENT_INTELLIGENCE_ENDPOINT</code> in <code>backend/.env</code> for PDF/image scanning.
         </p>
@@ -198,7 +212,7 @@ function AdminDocumentScan() {
 
       {/* Results */}
       {result && (
-        <>
+        <div className="document-scan-results">
           {/* Stats Cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12, marginBottom: "1.25rem" }}>
             {[
@@ -315,7 +329,14 @@ function AdminDocumentScan() {
                 <div style={{ display: "flex", gap: 8 }}>
                   <input
                     placeholder="Set Course for all..."
-                    style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid var(--surface-border)", fontSize: 12 }}
+                    style={{
+                      padding: "6px 10px",
+                      borderRadius: 8,
+                      border: "1px solid var(--surface-border)",
+                      fontSize: 12,
+                      color: "var(--text-primary)",
+                      background: "rgba(2,6,23,0.12)",
+                    }}
                     onChange={(e) => {
                       const val = e.target.value;
                       if (val) setEditList(editList.map(s => ({ ...s, course: val })));
@@ -323,14 +344,28 @@ function AdminDocumentScan() {
                   />
                   <input
                     placeholder="Set Year Level..."
-                    style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid var(--surface-border)", fontSize: 12 }}
+                    style={{
+                      padding: "6px 10px",
+                      borderRadius: 8,
+                      border: "1px solid var(--surface-border)",
+                      fontSize: 12,
+                      color: "var(--text-primary)",
+                      background: "rgba(2,6,23,0.12)",
+                    }}
                     onChange={(e) => {
                       const val = e.target.value;
                       if (val) setEditList(editList.map(s => ({ ...s, year_level: val })));
                     }}
                   />
                   <select
-                    style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid var(--surface-border)", fontSize: 12 }}
+                    style={{
+                      padding: "6px 10px",
+                      borderRadius: 8,
+                      border: "1px solid var(--surface-border)",
+                      fontSize: 12,
+                      color: "var(--text-primary)",
+                      background: "rgba(2,6,23,0.12)",
+                    }}
                     onChange={(e) => {
                       const val = e.target.value;
                       if (val) setEditList(editList.map(s => ({ ...s, scholarship_type: val })));
@@ -361,18 +396,19 @@ function AdminDocumentScan() {
                   size={15}
                   style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)" }}
                 />
-                <input
-                  style={{
-                    width: "100%",
-                    padding: "8px 10px 8px 32px",
-                    borderRadius: 10,
-                    border: "1px solid var(--surface-border)",
-                    background: "rgba(2,6,23,0.08)",
-                    fontSize: "0.88rem",
-                    outline: "none",
-                    color: "var(--text-primary)",
-                  }}
-                  placeholder="Search by student ID or name…"
+                  <input
+                    style={{
+                      width: "100%",
+                      padding: "8px 10px 8px 32px",
+                      borderRadius: 10,
+                      border: "1px solid var(--surface-border)",
+                      background: "rgba(15,23,42,0.06)",
+                      fontSize: "0.88rem",
+                      outline: "none",
+                      color: "var(--text-primary)",
+                      WebkitTextFillColor: "var(--text-primary)",
+                    }}
+                  placeholder="Search by student ID or name..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -503,7 +539,7 @@ function AdminDocumentScan() {
               </pre>
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );

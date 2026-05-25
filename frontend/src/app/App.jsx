@@ -265,7 +265,8 @@ function PageTransition({ page, isAdmin, isStudent }) {
   return (
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
-        key={page + "::" + (isAdmin ? "admin" : isStudent ? "student" : "")}
+        key={page}
+
 
         initial={{ opacity: 0, y: 14, filter: "blur(4px)" }}
         animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
