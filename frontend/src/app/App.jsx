@@ -1,3 +1,4 @@
+import React from "react";
 import { useEffect, useMemo, useState } from "react";
 
 import Login from "../pages/auth/Login";
@@ -20,7 +21,10 @@ import axios from "axios";
 import { FiMoon, FiSun } from "react-icons/fi";
 import { FiLogOut } from "react-icons/fi";
 
+import { AnimatePresence, motion } from "framer-motion";
+
 import { getLoginVariant, STAFF_LOGIN_PATH } from "./auth/authRoute";
+
 
 function App() {
   const [user, setUser] = useState(null);
@@ -248,14 +252,8 @@ function App() {
               </div>
             </div>
 
-            {page === "dashboard" && isAdmin && <Dashboard />}
-            {page === "students" && isAdmin && <GranteeDashboard />}
-            {page === "document-scan" && isAdmin && <AdminDocumentScan />}
-            {page === "qr" && isAdmin && <QRScanner />}
-            {page === "forecast" && isAdmin && <Forecast />}
-            {page === "notifications" && isAdmin && <Notifications />}
-            {page === "analytics" && isAdmin && <Analytics />}
-            {isStudent && <StudentPortal page={page} />}
+            <PageTransition page={page} isAdmin={isAdmin} isStudent={isStudent} />
+
           </div>
         </div>
       )}
@@ -263,4 +261,30 @@ function App() {
   );
 }
 
+function PageTransition({ page, isAdmin, isStudent }) {
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={page + "::" + (isAdmin ? "admin" : isStudent ? "student" : "")}
+
+        initial={{ opacity: 0, y: 14, filter: "blur(4px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        exit={{ opacity: 0, y: -10, filter: "blur(4px)" }}
+        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+        style={{ willChange: "transform, opacity" }}
+      >
+        {page === "dashboard" && isAdmin && <Dashboard />}
+        {page === "students" && isAdmin && <GranteeDashboard />}
+        {page === "document-scan" && isAdmin && <AdminDocumentScan />}
+        {page === "qr" && isAdmin && <QRScanner />}
+        {page === "forecast" && isAdmin && <Forecast />}
+        {page === "notifications" && isAdmin && <Notifications />}
+        {page === "analytics" && isAdmin && <Analytics />}
+        {isStudent && <StudentPortal page={page} />}
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 export default App;
+

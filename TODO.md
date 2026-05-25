@@ -1,5 +1,4 @@
-# TODO
-- [ ] Improve visibility of admin topbar Logout button (contrast, border, hover, focus)
-- [ ] Improve visibility of topbar ghost buttons (e.g., Refresh if used) via topbar-scoped CSS
-- [ ] Reload frontend and verify buttons are visible on admin dashboard
+- [ ] Analyze existing routing + animations in App.jsx / StudentPortal.jsx
+- [ ] Implement shared Framer Motion route transition in frontend/src/app/App.jsx
+- [ ] Verify build/compile in frontend
 
