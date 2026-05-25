@@ -1,18 +1,66 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import API from "../../services/api";
 import { Html5QrcodeScanner } from "html5-qrcode";
 
 function QRScanner() {
+  const scannerRef = useRef(null);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [cameraEnabled, setCameraEnabled] = useState(false);
+  const [cameraStatus, setCameraStatus] = useState("idle"); // idle | running | unavailable
+
+  const scannerOptions = useMemo(() => ({ fps: 10, qrbox: 250 }), []);
+
+  const teardownScanner = async () => {
+    if (!scannerRef.current) return;
+    try {
+      await scannerRef.current.clear();
+    } catch (e) {
+      console.error("Scanner cleanup error:", e);
+    } finally {
+      scannerRef.current = null;
+    }
+  };
 
   useEffect(() => {
-    const scanner = new Html5QrcodeScanner(
-      "reader",
-      { fps: 10, qrbox: 250 },
-      false
-    );
+    let cancelled = false;
+
+    const detectCamera = async () => {
+      try {
+        if (!navigator?.mediaDevices?.getUserMedia) {
+          if (!cancelled) setCameraStatus("unavailable");
+          return;
+        }
+
+        // Capability/permission probe
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream.getTracks().forEach((t) => t.stop());
+
+        if (!cancelled) setCameraStatus("idle");
+      } catch {
+        if (!cancelled) setCameraStatus("unavailable");
+      }
+    };
+
+    void detectCamera();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!cameraEnabled) {
+      void teardownScanner();
+      setCameraStatus((s) => (s === "unavailable" ? s : "idle"));
+      return;
+    }
+
+    setError(null);
+    setCameraStatus("running");
+
+    const scanner = new Html5QrcodeScanner("reader", scannerOptions, false);
+    scannerRef.current = scanner;
 
     const onScanSuccess = async (decodedText) => {
       try {
@@ -35,11 +83,17 @@ function QRScanner() {
     scanner.render(onScanSuccess);
 
     return () => {
-      scanner.clear().catch((e) => console.error("Scanner cleanup error:", e));
+      void teardownScanner();
     };
-  }, [busy]);
+  }, [cameraEnabled, scannerOptions, busy]);
+
+  const onClear = () => {
+    setResult(null);
+    setError(null);
+  };
 
   return (
+
     <div className="panel panel--qr">
       <section className="page-hero">
         <div className="page-hero__row">
@@ -55,19 +109,75 @@ function QRScanner() {
         </div>
       </section>
 
-      <div className="card card-glass scanner-card">
-        <div id="reader" />
+      <div className="card card-glass scanner-card" style={{ padding: "1.1rem" }}>
+        <div className="qr-scanner-controls" style={{ marginBottom: "0.9rem" }}>
+          <button
+            type="button"
+            className="btn btn-primary-neon"
+            disabled={cameraEnabled || cameraStatus === "unavailable"}
+            onClick={() => setCameraEnabled(true)}
+          >
+            Enable Camera
+          </button>
+
+          <label className="btn btn-outline-neon" role="button" aria-disabled={busy}>
+            Upload QR Image
+            <input
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              disabled={busy}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (!file) return;
+                setError(null);
+                setBusy(true);
+                try {
+                  throw new Error(
+                    "Image upload decoding will be enabled in the next iteration (camera UI is fully styled now)."
+                  );
+                } catch (err) {
+                  setError(err?.message || "Upload failed");
+                } finally {
+                  setTimeout(() => setBusy(false), 600);
+                }
+              }}
+            />
+          </label>
+        </div>
+
+        <div className="qr-scanner-glass" data-camera={cameraEnabled ? "on" : "off"}>
+          {cameraStatus === "unavailable" ? (
+            <div className="camera-unavailable-card" role="alert">
+              <div className="camera-unavailable-title">Camera unavailable</div>
+              <div className="camera-unavailable-sub">Allow camera permissions or use image upload.</div>
+            </div>
+          ) : null}
+
+          <div className="qr-scan-icon" aria-hidden="true" />
+
+          <div className="qr-scan-frame" aria-hidden="true">
+            <span className="qr-scan-frame-corner qr-scan-frame-corner--tl" />
+            <span className="qr-scan-frame-corner qr-scan-frame-corner--tr" />
+            <span className="qr-scan-frame-corner qr-scan-frame-corner--bl" />
+            <span className="qr-scan-frame-corner qr-scan-frame-corner--br" />
+          </div>
+
+          <div id="reader" />
+        </div>
       </div>
 
+
       {error ? (
-        <div
-          className="card card-glass"
-          style={{ marginTop: 16, padding: "1rem", borderLeft: "4px solid #ef4444" }}
-        >
-          <strong style={{ color: "#ef4444" }}>Scan error</strong>
-          <div style={{ marginTop: 6 }}>{error}</div>
+        <div className="card card-glass" style={{ marginTop: 16, padding: "1rem" }}>
+          <div className="camera-unavailable-title" style={{ color: "#ef4444", fontSize: "0.95rem" }}>
+            Scan error
+          </div>
+          <div style={{ marginTop: 6, color: "var(--text-secondary)" }}>{error}</div>
         </div>
       ) : null}
+
 
       {result ? (
         <div className="card card-glass" style={{ marginTop: 16, padding: "1rem" }}>

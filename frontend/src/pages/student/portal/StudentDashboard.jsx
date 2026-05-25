@@ -169,6 +169,7 @@ function StudentDashboard({ studentData }) {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.35 }}
         >
+
           <div className="panel-head">
             <div className="panel-title">
               <FiCheckCircle />
@@ -227,41 +228,95 @@ function StudentDashboard({ studentData }) {
             </div>
           </div>
 
-          <div style={{ padding: "0.25rem 1rem 1rem" }}>
+          <div className="latest-announcements-wrap">
+            <div className="latest-announcements-topbar">
+              <div className="latest-announcements-kicker">Latest Announcements</div>
+              <button
+                type="button"
+                className="latest-clear-btn"
+                onClick={() => {
+                  // UI-only clear action (backend endpoint not implemented)
+                  setAnnouncements([]);
+                }}
+
+                aria-label="Clear announcements"
+              >
+                Clear
+              </button>
+            </div>
+
             {annLoading ? (
-              <div className="hint" style={{ paddingTop: 8 }}>
+              <div className="latest-announcements-loading">
                 Loading announcements...
               </div>
             ) : annError ? (
-              <div className="hint" style={{ paddingTop: 8, color: "#dc2626" }}>
+              <div className="latest-announcements-error">
                 Error loading announcements: {annError}
               </div>
             ) : recentAnnouncements.length === 0 ? (
-              <div className="hint" style={{ paddingTop: 8 }}>
-                No announcements yet.
-              </div>
+              <div className="latest-announcements-empty">No announcements yet.</div>
             ) : (
-              <div style={{ display: "grid", gap: 10, paddingTop: 8 }}>
-                {recentAnnouncements.map((a) => (
-                  <motion.div
-                    key={a.id} // Added motion.div for animation
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    style={{ borderRadius: 14, padding: "0.75rem 0.85rem", background: "rgba(var(--primary), 0.05)", border: "1px solid rgba(var(--primary), 0.1)" }}
-                  >
-                    <div style={{ fontWeight: 900, marginBottom: 4 }}>
-                      {a.title ?? "Announcement"}
-                    </div>
-                    <div className="hint" style={{ lineHeight: 1.35 }}>
-                      {(a.bodyText ?? a.body ?? "").slice(0, 120)}
-                      {(a.bodyText ?? a.body ?? "").length > 120 ? "..." : ""}
-                    </div>
-                  </motion.div>
-                ))}
+              <div className="latest-announcements-feed">
+                {recentAnnouncements.map((a, idx) => {
+                  const from = a.fromAddress || a.senderEmail || a.sender || a.from || "";
+                  const rawTs = a.receivedAt || a.createdAt || a.timestamp || null;
+                  const tsLabel = rawTs ? new Date(rawTs).toLocaleString() : "";
+                  const body = a.bodyText ?? a.body ?? "";
+                  const trimmed = body.slice(0, 160);
+                  const hasMore = body.length > 160;
+
+                  return (
+                    <motion.article
+                      key={a.id ?? idx}
+                      className="latest-announcement-card"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.28, delay: idx * 0.02 }}
+                    >
+                      <div className="latest-timeline">
+                        <div className="latest-timeline-connector" />
+                        <div className="latest-timeline-dot" />
+                      </div>
+
+                      <div className="latest-card-main">
+                        <div className="latest-card-header">
+                          <h4 className="latest-title">{a.title ?? "Announcement"}</h4>
+                          <div className="latest-timestamp">
+                          <span className="latest-calendar" aria-hidden="true">📅</span>
+                            <span className="latest-ts-text" aria-label={tsLabel || "Announcement time"}>{tsLabel}</span>
+
+                          </div>
+                        </div>
+
+                        {from ? (
+                          <div className="latest-from">
+                            <span className="latest-from-label">From</span>
+                            <span className="latest-from-email">{from}</span>
+                          </div>
+                        ) : null}
+
+                        <div className="latest-body">
+                          {trimmed}
+                          {hasMore ? "..." : ""}
+                        </div>
+                      </div>
+                    </motion.article>
+                  );
+                })}
               </div>
             )}
+
+            <div className="latest-pagination" aria-label="Announcement pagination">
+              <button type="button" className="latest-page-btn" aria-label="Previous page">
+                ◀
+              </button>
+              <button type="button" className="latest-page-btn latest-page-btn--active">1</button>
+              <button type="button" className="latest-page-btn" aria-label="Next page">
+                ▶
+              </button>
+            </div>
           </div>
+
         </motion.div>
       </div>
 
