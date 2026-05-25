@@ -203,35 +203,63 @@ function QRScanner() {
             </button>
           </div>
 
-          <div style={{ marginTop: 14 }}>
-            <div style={{ fontWeight: 800, marginBottom: 8 }}>Latest announcements</div>
-            {Array.isArray(result.announcements) && result.announcements.length ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {result.announcements.map((a) => (
-                  <div
-                    key={a.id}
-                    style={{
-                      padding: "0.85rem 1rem",
-                      borderRadius: 12,
-                      border: "1px solid rgba(148,163,184,0.25)",
-                    }}
-                  >
-                    <div style={{ fontWeight: 900 }}>{a.title}</div>
-                    {a.fromAddress ? (
-                      <div style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginTop: 2 }}>
-                        From: {a.fromAddress}
-                      </div>
-                    ) : null}
-                    <div style={{ marginTop: 6, whiteSpace: "pre-wrap" }}>
-                      {(a.bodyText || "").slice(0, 800)}
-                    </div>
-                  </div>
-                ))}
+          <section className="latest-announcements-card" style={{ marginTop: 14, padding: "1rem 1rem 1.1rem" }}>
+            <div className="latest-announcements-topbar">
+              <div>
+                <div className="latest-announcements-kicker">Latest Announcements</div>
+                <div className="latest-announcements-title">Neon timeline feed</div>
               </div>
-            ) : (
-              <div style={{ color: "var(--text-secondary)" }}>No announcements found.</div>
-            )}
-          </div>
+            </div>
+
+            <div className="latest-announcements-feed">
+              {Array.isArray(result.announcements) && result.announcements.length ? (
+                <div className="latest-timeline">
+                  {result.announcements.slice(0, 6).map((a) => {
+                    const senderEmail = a.fromAddress || a.senderEmail || a.from || "unknown@domain.com";
+                    const tsRaw = a.receivedAt || a.createdAt || a.timestamp;
+                    const tsLabel = tsRaw ? new Date(tsRaw).toLocaleString() : "—";
+                    const dispatched = Boolean(a.emailDispatchedAt);
+
+                    return (
+                      <article key={a.id ?? `${a.title}-${tsRaw ?? Math.random()}`} className="latest-feed-item">
+                        <div className="latest-left">
+                          <div className="latest-node" />
+                        </div>
+
+                        <div className="latest-card">
+                          <div className="latest-card-body">
+                            <div className="latest-card-header">
+                              <h4 className="latest-ann-title">{a.title || "—"}</h4>
+                            </div>
+
+                            <p className="latest-ann-preview">{(a.bodyText || a.body || "").slice(0, 220) || "—"}</p>
+
+                            <div className="latest-sender">
+                              <span className="latest-sender-label">From</span>
+                              <span className="latest-sender-email">{senderEmail}</span>
+                            </div>
+                          </div>
+
+                          <div className="latest-meta-right">
+                            <div className="latest-timestamp">
+                              <span className="latest-calendar" aria-hidden="true">📅</span>
+                              <span>{tsLabel}</span>
+                            </div>
+                            <div className={dispatched ? "latest-status ok" : "latest-status pending"}>
+                              {dispatched ? "Emailed" : "Pending"}
+                            </div>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="latest-empty">No announcements found.</div>
+              )}
+            </div>
+          </section>
+
 
           <div style={{ marginTop: 16 }}>
             <div style={{ fontWeight: 800, marginBottom: 8 }}>Requirements checklist</div>

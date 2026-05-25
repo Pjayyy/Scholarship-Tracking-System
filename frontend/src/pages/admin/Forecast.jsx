@@ -7,6 +7,8 @@ import { Chart as ChartJS, ArcElement, CategoryScale, LinearScale, PointElement,
 
 import API from "../../services/api";
 
+import "../../styles/LatestAnnouncements.css";
+
 ChartJS.register(
   ArcElement,
   CategoryScale,
@@ -450,9 +452,10 @@ function Forecast() {
         .forecast-page{ padding: 0; }
         .forecast-wrap{ max-width: 1240px; margin: 0 auto; }
         .forecast-hero{
-          background: linear-gradient(135deg, rgba(37,99,235,0.10), rgba(16,185,129,0.08));
-          border: 1px solid rgba(59,130,246,0.18);
-          border-radius: 18px;
+          /* Match dashboard hero/card system theme */
+          background: linear-gradient(135deg, rgba(108,99,255,0.10), rgba(79,70,229,0.06));
+          border: 1px solid rgba(108,99,255,0.18);
+          border-radius: var(--radius-xl, 18px);
           padding: 18px 18px;
           box-shadow: var(--shadow-md);
           backdrop-filter: blur(10px);
@@ -462,16 +465,26 @@ function Forecast() {
         .forecast-sub{ color: var(--text-secondary); font-weight: 650; margin-top: 6px; max-width: 680px; }
         .forecast-grid{ margin-top: 18px; display:grid; grid-template-columns: 1.05fr 0.95fr; gap: 16px; }
         @media (max-width: 980px){ .forecast-grid{ grid-template-columns: 1fr; } }
-        .panel-card{ background: rgba(255,255,255,0.72); backdrop-filter: blur(12px); border: 1px solid rgba(226,232,240,0.9); border-radius: 18px; box-shadow: var(--shadow-md); padding: 16px; }
-        [data-theme='dark'] .panel-card{ background: rgba(30,41,59,0.55); border-color: rgba(51,65,85,0.8); }
+
+        /* Use system glass card tokens */
+        .panel-card{
+          background: var(--surface);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid var(--surface-border);
+          border-radius: var(--radius-xl, 18px);
+          box-shadow: var(--shadow-md);
+          padding: 16px;
+        }
         .glass{ background: rgba(255,255,255,0.06); backdrop-filter: blur(10px); }
         .section-title{ font-size: 14px; color: var(--text-secondary); font-weight: 950; display:flex; align-items:center; gap: 10px; margin-bottom: 10px; }
+
         .fl{ width: 100%; }
         .fl-icon{ position:absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 16px; pointer-events:none; }
         .fl-input{
           width:100%;
-          border: 1px solid rgba(226,232,240,0.95);
-          background: rgba(255,255,255,0.8);
+          border: 1px solid var(--surface-border);
+          background: var(--surface);
           border-radius: 14px;
           padding: 22px 14px 12px 42px;
           font-size: 15px;
@@ -479,8 +492,7 @@ function Forecast() {
           transition: var(--transition);
           color: var(--text-primary);
         }
-        [data-theme='dark'] .fl-input{ background: rgba(30,41,59,0.45); border-color: rgba(51,65,85,0.9); }
-        .fl-input:focus{ border-color: rgba(37,99,235,0.65); box-shadow: 0 0 0 4px rgba(59,130,246,0.15); }
+        .fl-input:focus{ border-color: rgba(108,99,255,0.55); box-shadow: 0 0 0 4px rgba(99,102,241,0.15); }
         .fl-label{
           position:absolute; left: 42px; top: 14px;
           color: var(--text-secondary); font-weight: 800; font-size: 12px;
@@ -495,10 +507,19 @@ function Forecast() {
         .attendance-slider{ display:flex; gap: 12px; flex-direction:column; }
         .range-row{ display:flex; gap: 12px; align-items:center; }
         .range-row input[type='range']{ width: 100%; }
-        .range-pill{ min-width: 92px; padding: 10px 12px; border-radius: 14px; border: 1px solid rgba(226,232,240,0.95); background: rgba(255,255,255,0.8); font-weight: 1000; text-align:center; }
-        [data-theme='dark'] .range-pill{ background: rgba(30,41,59,0.45); border-color: rgba(51,65,85,0.9); }
+        .range-pill{
+          min-width: 92px;
+          padding: 10px 12px;
+          border-radius: 14px;
+          border: 1px solid var(--surface-border);
+          background: var(--surface);
+          font-weight: 1000;
+          text-align:center;
+          color: var(--text-primary);
+        }
         .atten-indicator{ display:flex; align-items:center; justify-content:space-between; gap: 10px; flex-wrap:wrap; }
-        .dot{ width: 10px; height: 10px; border-radius: 999px; background: #f59e0b; box-shadow: 0 0 0 4px rgba(245,158,11,0.12); }
+        .dot{ width: 10px; height: 10px; border-radius: 999px; background: var(--warning); box-shadow: 0 0 0 4px rgba(245,158,11,0.12); }
+
         .predict-btn{
           width: 100%;
           border: none;
@@ -507,8 +528,8 @@ function Forecast() {
           color: white;
           font-weight: 1000;
           cursor: pointer;
-          background: linear-gradient(135deg, #38bdf8, #2563eb);
-          box-shadow: 0 18px 45px rgba(37,99,235,0.25);
+          background: linear-gradient(135deg, var(--accent) 0%, var(--secondary) 100%);
+          box-shadow: var(--shadow-md);
           transition: transform 160ms ease, filter 160ms ease;
           position: relative;
           overflow:hidden;
@@ -518,41 +539,38 @@ function Forecast() {
         .predict-btn:disabled{ opacity: 0.7; cursor:not-allowed; transform:none; }
         .predict-btn::after{ content:''; position:absolute; inset:0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent); transform: translateX(-100%); transition: 450ms ease; }
         .predict-btn:hover::after{ transform: translateX(100%); }
+
         .btn-row{ display:flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
-        .btn-secondary-small{ flex: 1; min-width: 180px; border-radius: 16px; border: 1px solid rgba(226,232,240,0.95); background: rgba(255,255,255,0.7); padding: 12px 14px; font-weight: 950; cursor:pointer; transition: var(--transition); display:flex; align-items:center; justify-content:center; gap: 10px; }
-        [data-theme='dark'] .btn-secondary-small{ background: rgba(30,41,59,0.45); border-color: rgba(51,65,85,0.9); }
-        .btn-secondary-small:hover{ transform: translateY(-1px); border-color: rgba(37,99,235,0.35); }
+        .btn-secondary-small{ 
+          flex: 1; 
+          min-width: 180px; 
+          border-radius: 16px; 
+          border: 1px solid rgba(108,99,255,0.35);
+          background: rgba(255,255,255,0.06);
+          padding: 12px 14px; 
+          font-weight: 950; 
+          cursor:pointer; 
+          transition: var(--transition); 
+          display:flex; align-items:center; justify-content:center; gap: 10px; 
+          color: var(--accent);
+        }
+        .btn-secondary-small:hover{ transform: translateY(-1px); border-color: rgba(108,99,255,0.55); }
 
         .risk-badge{ font-weight: 1000; }
         .kpi-grid{ display:grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 16px; }
         @media (max-width: 980px){ .kpi-grid{ grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 520px){ .kpi-grid{ grid-template-columns: 1fr; } }
-        .kpi{ border-radius: 18px; border: 1px solid rgba(226,232,240,0.95); background: rgba(255,255,255,0.65); padding: 14px; }
-        [data-theme='dark'] .kpi{ background: rgba(30,41,59,0.45); border-color: rgba(51,65,85,0.9); }
+        .kpi{
+          border-radius: 18px;
+          border: 1px solid var(--surface-border);
+          background: var(--surface);
+          padding: 14px;
+        }
         .kpi-title{ color: var(--text-secondary); font-weight: 900; font-size: 12px; display:flex; gap: 8px; align-items:center; }
         .kpi-value{ margin-top: 8px; font-size: 22px; font-weight: 1100; }
 
-        .chart-card{ padding: 12px; border-radius: 18px; border: 1px solid rgba(226,232,240,0.95); background: rgba(255,255,255,0.65); }
-        [data-theme='dark'] .chart-card{ background: rgba(30,41,59,0.45); border-color: rgba(51,65,85,0.9); }
+        .chart-card{ padding: 12px; border-radius: 18px; border: 1px solid var(--surface-border); background: var(--surface); }
 
-        .table-toolbar2{ display:flex; justify-content:space-between; align-items:center; gap: 10px; flex-wrap:wrap; margin-top: 14px; margin-bottom: 10px; }
-        .tbl-controls{ display:flex; gap: 10px; align-items:center; flex-wrap:wrap; }
-        .search-input2{ padding: 12px 12px 12px 12px; border-radius: 14px; border: 1px solid rgba(226,232,240,0.95); background: rgba(255,255,255,0.7); min-width: 280px; font-weight: 800; }
-        [data-theme='dark'] .search-input2{ background: rgba(30,41,59,0.45); border-color: rgba(51,65,85,0.9); color: var(--text-primary); }
-        .select2{ padding: 12px; border-radius: 14px; border: 1px solid rgba(226,232,240,0.95); background: rgba(255,255,255,0.7); font-weight: 900; }
-        [data-theme='dark'] .select2{ background: rgba(30,41,59,0.45); border-color: rgba(51,65,85,0.9); color: var(--text-primary); }
-        .table-wrap2{ border-radius: 18px; border: 1px solid rgba(226,232,240,0.95); background: rgba(255,255,255,0.65); overflow:hidden; box-shadow: var(--shadow-sm); }
-        [data-theme='dark'] .table-wrap2{ background: rgba(30,41,59,0.45); border-color: rgba(51,65,85,0.9); }
-        table.forecast-table{ border-collapse: collapse; width:100%; }
-        table.forecast-table thead th{ position: sticky; top:0; z-index:2; background: rgba(15,23,42,0.95); color: white; padding: 12px; font-size: 12px; font-weight: 1000; }
-        [data-theme='dark'] table.forecast-table thead th{ background: rgba(2,6,23,0.95); }
-        table.forecast-table tbody td{ padding: 12px; border-bottom: 1px solid rgba(226,232,240,0.6); font-weight: 750; color: var(--text-primary); }
-        [data-theme='dark'] table.forecast-table tbody td{ border-bottom-color: rgba(51,65,85,0.6); }
-        table.forecast-table tbody tr:hover{ background: rgba(37,99,235,0.08); }
-
-        .pagination2{ display:flex; justify-content:space-between; align-items:center; gap: 12px; padding: 12px; flex-wrap:wrap; }
-        .empty2{ padding: 26px; text-align:center; color: var(--text-secondary); }
-        .skeleton-row{ height: 18px; border-radius: 9px; background: linear-gradient(90deg, rgba(226,232,240,1) 25%, rgba(240,240,240,1) 50%, rgba(226,232,240,1) 75%); background-size: 200% 100%; animation: loading 1.2s infinite; }
         @media (prefers-reduced-motion: reduce){ .predict-btn::after{ display:none; } }
       `}</style>
 
@@ -738,7 +756,89 @@ function Forecast() {
             <motion.div className="panel-card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
               <div className="section-title"><FiTrendingUp /> Intelligent Forecast Visuals</div>
 
+              <section className="latest-announcements-card" style={{ marginBottom: 12, padding: "1rem 1rem 1.1rem" }}>
+                <div className="latest-announcements-topbar">
+                  <div>
+                    <div className="latest-announcements-kicker">What the system needs to forecast</div>
+                    <div className="latest-announcements-title">Risk & attendance signals</div>
+                  </div>
+                </div>
+
+                <div className="latest-announcements-feed">
+                  <div className="latest-timeline">
+                    {(() => {
+                      const gpa = clamp(parseFloat(gpaStr), 0, 4);
+                      const a = clamp(parseFloat(attendanceStr), 0, 100);
+                      const score = derivedScore;
+                      const level = derivedRiskLevel;
+
+                      const cards = [
+                        {
+                          title: "Attendance signal",
+                          preview: "Current attendance % is used as the strongest leading indicator for risk escalation.",
+                          from: `Attendance input: ${Math.round(a)}%`,
+                          dispatched: a >= 80,
+                          ts: new Date().toISOString(),
+                        },
+                        {
+                          title: "Academic signal (GPA)",
+                          preview: "GPA offsets attendance risk by reflecting academic stability trends.",
+                          from: `GPA input: ${Number.isFinite(gpa) ? gpa.toFixed(2) : "—"}`,
+                          dispatched: gpa >= 3.0,
+                          ts: new Date().toISOString(),
+                        },
+                        {
+                          title: "Forecast trigger",
+                          preview: `Risk score=${score}. Model classifies the student as ${riskToMeta(level).label}.`,
+                          from: `Predicted: ${level}`,
+                          dispatched: level === "SAFE",
+                          ts: new Date().toISOString(),
+                        },
+                      ];
+
+                      return cards.map((c, idx) => {
+                        const senderEmail = c.from;
+                        const tsLabel = c.ts ? new Date(c.ts).toLocaleString() : "—";
+                        return (
+                          <article key={`${c.title}-${idx}`} className="latest-feed-item">
+                            <div className="latest-left">
+                              <div className="latest-node" />
+                            </div>
+
+                            <div className="latest-card">
+                              <div className="latest-card-body">
+                                <div className="latest-card-header">
+                                  <h4 className="latest-ann-title">{c.title}</h4>
+                                </div>
+
+                                <p className="latest-ann-preview">{c.preview}</p>
+
+                                <div className="latest-sender">
+                                  <span className="latest-sender-label">From</span>
+                                  <span className="latest-sender-email">{senderEmail}</span>
+                                </div>
+                              </div>
+
+                              <div className="latest-meta-right">
+                                <div className="latest-timestamp">
+                                  <span className="latest-calendar" aria-hidden="true">📡</span>
+                                  <span>{tsLabel}</span>
+                                </div>
+                                <div className={c.dispatched ? "latest-status ok" : "latest-status pending"}>
+                                  {c.dispatched ? "Ready" : "Pending"}
+                                </div>
+                              </div>
+                            </div>
+                          </article>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+              </section>
+
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+
                 <div className="chart-card">
                   <div style={{ fontWeight: 1000, color: "var(--text-secondary)", fontSize: 13, marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}>
                     <FiActivity /> Risk Trend (Mock)
@@ -925,162 +1025,74 @@ function Forecast() {
             </motion.div>
           </div>
 
-          {/* Right: History Table + Exports + Charts */}
+          {/* Right: How forecasting works (signals → risk score → risk level → intervention) */}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <motion.div className="panel-card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-              <div className="section-title"><FiUsers /> Forecast History Analytics</div>
+              <div className="section-title"><FiTrendingUp /> How the system forecasts</div>
 
-              <div className="table-toolbar2">
-                <div className="tbl-controls">
-                  <div style={{ position: "relative" }}>
-                    <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)" }}><FiSearch /></div>
-                    <input
-                      className="search-input2"
-                      style={{ paddingLeft: 42 }}
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      placeholder="Search predictions (risk, score, intervention)…"
-                      aria-label="Search predictions"
-                    />
-                  </div>
-
-                  <select className="select2" value={riskFilter} onChange={(e) => setRiskFilter(e.target.value)} aria-label="Filter by risk level">
-                    <option value="ALL">All Risk Levels</option>
-                    <option value="SAFE">Low Risk</option>
-                    <option value="WARNING">Moderate Risk</option>
-                    <option value="AT RISK">High Risk</option>
-                  </select>
-                </div>
-
-                <div className="tbl-controls">
-                  <button className="btn-secondary-small" type="button" onClick={exportCsv} style={{ minWidth: 160 }}>
-                    <FiDownload /> Export CSV
-                  </button>
-                  <button className="btn-secondary-small" type="button" onClick={exportPdf} style={{ minWidth: 160 }}>
-                    <FiDownload /> Export PDF
-                  </button>
-                </div>
+              <div style={{ color: "var(--text-secondary)", fontWeight: 780, fontSize: 13, lineHeight: 1.6, marginBottom: 12 }}>
+                Forecasting converts <b>attendance</b> and <b>GPA</b> into a <b>risk score</b>, then maps it to a <b>risk level</b> and the recommended <b>intervention</b>.
               </div>
 
-              <div ref={tableTopRef} className="table-wrap2">
-                <div style={{ overflowX: "auto" }}>
-                  <table className="forecast-table" aria-label="Predictions history table">
-                    <thead>
-                      <tr>
-                        <th>Date & Time</th>
-                        <th>Prediction Score</th>
-                        <th>Risk Level</th>
-                        <th>Suggested Intervention</th>
-                        <th>Forecast Confidence</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <AnimatePresence initial={false}>
-                        {pagedHistory.length ? (
-                          pagedHistory.map((h) => {
-                            const tone = String(h.risk_level).toUpperCase() === "SAFE" ? "success" : String(h.risk_level).toUpperCase() === "WARNING" ? "warning" : "danger";
-                            const color = tone === "success" ? "#22c55e" : tone === "warning" ? "#f59e0b" : "#ef4444";
-                            return (
-                              <motion.tr key={h.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={{ duration: 0.18 }}>
-                                <td>{formatDateTime(h.created_at)}</td>
-                                <td style={{ fontWeight: 1100 }}>{Math.round(h.prediction_score)}</td>
-                                <td>
-                                  <span className={`badge ${tone === "success" ? "badge-success" : tone === "warning" ? "badge-warning" : "badge-danger"}`} style={{ borderRadius: 999, border: `1px solid ${color}55`, background: `${color}1a`, color: color, fontWeight: 1100 }}>
-                                    {String(h.risk_level).toUpperCase()}
-                                  </span>
-                                </td>
-                                <td>{h.suggested_intervention}</td>
-                                <td>
-                                  <span className="badge badge-neutral" style={{ fontWeight: 1100 }}>{Math.round(h.confidence)}%</span>
-                                </td>
-                              </motion.tr>
-                            );
-                          })
-                        ) : (
-                          <tr>
-                            <td colSpan={5}>
-                              <div className="empty2">
-                                <div style={{ fontSize: 42, marginBottom: 8 }}>🧠</div>
-                                <div style={{ fontWeight: 1000, color: "var(--text-primary)" }}>No predictions found</div>
-                                <div style={{ marginTop: 8 }}>Adjust filters or generate a new forecast.</div>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </AnimatePresence>
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="pagination2">
-                  <div style={{ color: "var(--text-secondary)", fontWeight: 900 }}>
-                    Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, filteredHistory.length)} of {filteredHistory.length}
-                  </div>
-                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                    <button className="btn-secondary-small" type="button" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} style={{ opacity: page <= 1 ? 0.6 : 1, minWidth: 140 }}>
-                      Prev
-                    </button>
-                    <div className="badge badge-neutral" style={{ fontWeight: 1100 }}>Page {page} / {totalPages}</div>
-                    <button className="btn-secondary-small" type="button" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} style={{ opacity: page >= totalPages ? 0.6 : 1, minWidth: 140 }}>
-                      Next
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div className="panel-card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-              <div className="section-title"><FiAlertCircle /> Risk Analytics Snapshot</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
-                <div className="chart-card">
-                  <div style={{ fontWeight: 1000, color: "var(--text-secondary)", fontSize: 13, marginBottom: 8 }}>High-risk vs others</div>
-                  {(() => {
-                    const safe = history.filter((h) => String(h.risk_level).toUpperCase() === "SAFE").length;
-                    const warn = history.filter((h) => String(h.risk_level).toUpperCase() === "WARNING").length;
-                    const risk = history.filter((h) => String(h.risk_level).toUpperCase() === "AT RISK").length;
-                    const data = {
-                      labels: ["Low", "Moderate", "High"],
-                      datasets: [
-                        {
-                          label: "Count",
-                          data: [safe, warn, risk],
-                          backgroundColor: ["#22c55e", "#f59e0b", "#ef4444"],
-                          borderRadius: 12,
-                        },
-                      ],
-                    };
-                    return (
-                      <div style={{ height: 220 }}>
-                        <Bar data={data} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }} />
-                      </div>
-                    );
-                  })()}
+                <div className="chart-card" style={{ padding: 14, background: "linear-gradient(180deg, rgba(37,99,235,0.08), rgba(255,255,255,0.0))" }}>
+                  <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 8 }}>
+                    <span className="badge badge-neutral" style={{ fontWeight: 1100, borderRadius: 999 }}>Step 1</span>
+                    <div style={{ fontWeight: 1000, color: "var(--text-primary)" }}>Signals extracted</div>
+                  </div>
+                  <div style={{ display: "grid", gap: 8 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                      <span style={{ color: "var(--text-secondary)", fontWeight: 850 }}>GPA</span>
+                      <span style={{ fontWeight: 1100 }}>{Number.isFinite(parseFloat(gpaStr)) ? clamp(parseFloat(gpaStr), 0, 4).toFixed(2) : "0.00"}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                      <span style={{ color: "var(--text-secondary)", fontWeight: 850 }}>Attendance</span>
+                      <span style={{ fontWeight: 1100 }}>{Number.isFinite(parseFloat(attendanceStr)) ? Math.round(clamp(parseFloat(attendanceStr), 0, 100)) : 0}%</span>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="chart-card">
-                  <div style={{ fontWeight: 1000, color: "var(--text-secondary)", fontSize: 13, marginBottom: 8 }}>Forecast confidence distribution (mock)</div>
-                  {(() => {
-                    const conf = history.slice(0, 8).map((h) => clamp(Math.round(h.confidence), 0, 100));
-                    const data = {
-                      labels: conf.map((_, i) => `P${i + 1}`),
-                      datasets: [
-                        {
-                          label: "Confidence",
-                          data: conf,
-                          borderColor: "#2563eb",
-                          backgroundColor: "rgba(37,99,235,0.10)",
-                          tension: 0.35,
-                          fill: true,
-                          pointRadius: 2,
-                        },
-                      ],
-                    };
-                    return (
-                      <div style={{ height: 220 }}>
-                        <Line data={data} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }} />
-                      </div>
-                    );
-                  })()}
+                <div className="chart-card" style={{ padding: 14, background: "linear-gradient(180deg, rgba(37,99,235,0.06), rgba(255,255,255,0.0))" }}>
+                  <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 8 }}>
+                    <span className="badge badge-neutral" style={{ fontWeight: 1100, borderRadius: 999 }}>Step 2</span>
+                    <div style={{ fontWeight: 1000, color: "var(--text-primary)" }}>Risk score computed</div>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+                    <div>
+                      <div style={{ color: "var(--text-secondary)", fontWeight: 850, fontSize: 13 }}>Current computed risk score</div>
+                      <div style={{ fontSize: 28, fontWeight: 1200, letterSpacing: "-0.02em" }}>{derivedScore}</div>
+                    </div>
+                    <div>
+                      <ProgressGauge value={derivedScore} color={meta.color} />
+                    </div>
+                  </div>
+                  <div style={{ marginTop: 10, color: "var(--text-secondary)", fontWeight: 780, fontSize: 13 }}>
+                    Score grows when <b>attendance drops</b> and improves when <b>GPA supports stability</b>.
+                  </div>
+                </div>
+
+                <div className="chart-card" style={{ padding: 14, background: "linear-gradient(180deg, rgba(37,99,235,0.05), rgba(255,255,255,0.0))" }}>
+                  <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 8 }}>
+                    <span className="badge badge-neutral" style={{ fontWeight: 1100, borderRadius: 999 }}>Step 3</span>
+                    <div style={{ fontWeight: 1000, color: "var(--text-primary)" }}>Risk level + recommended intervention</div>
+                  </div>
+                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                      <span className={`badge ${meta.badge}`} style={{ fontWeight: 1100, borderRadius: 999 }}>
+                        {riskToMeta(prediction?.risk_level || derivedRiskLevel).label}
+                      </span>
+                      <span className="badge badge-neutral" style={{ fontWeight: 1100 }}>
+                        Confidence: {prediction?.confidence ?? aiConfidenceMock}%
+                      </span>
+                    </div>
+                    <div style={{ fontWeight: 1000, color: meta.color }}>Recommended</div>
+                  </div>
+                  <div style={{ marginTop: 8, color: "var(--text-secondary)", fontWeight: 850, fontSize: 13 }}>
+                    {riskToMeta(prediction?.risk_level || derivedRiskLevel).explanation}
+                  </div>
+                  <div style={{ marginTop: 10, fontWeight: 1100, color: meta.color }}>
+                    {riskToMeta(prediction?.risk_level || derivedRiskLevel).intervention}
+                  </div>
                 </div>
               </div>
             </motion.div>

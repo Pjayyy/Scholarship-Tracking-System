@@ -362,18 +362,18 @@ function GranteeDashboard() {
   };
 
   return (
-    <div style={{ padding: "1.5rem", background: "#f8fafc", minHeight: "100vh" }}>
+    <div style={{ padding: "1.5rem", background: "transparent", minHeight: "100vh" }}>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         style={{
-          background: "white",
-          border: "1px solid rgba(148,163,184,0.2)",
+          background: "var(--surface)",
+          border: "1px solid var(--surface-border)",
           borderRadius: "1.25rem",
           padding: "1.5rem",
           marginBottom: "1.5rem",
-          boxShadow: "0 10px 30px rgba(15,23,42,0.05)",
+          boxShadow: "var(--shadow-md)",
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem" }}>
@@ -401,12 +401,12 @@ function GranteeDashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
         style={{
-          background: "white",
-          border: "1px solid rgba(148,163,184,0.2)",
+          background: "var(--surface)",
+          border: "1px solid var(--surface-border)",
           borderRadius: "1.25rem",
           padding: "1.25rem",
           marginBottom: "1.5rem",
-          boxShadow: "0 10px 30px rgba(15,23,42,0.05)",
+          boxShadow: "var(--shadow-md)",
         }}
       >
         <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>

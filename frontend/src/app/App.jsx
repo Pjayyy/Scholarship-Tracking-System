@@ -96,6 +96,22 @@ function App() {
     if (token) localStorage.setItem("token", token);
   }, [token]);
 
+  // Navigation helper for cards/buttons that want to change pages without pulling in routing.
+  useEffect(() => {
+    const handler = (e) => {
+      const next = e?.detail?.page;
+      if (typeof next !== "string") return;
+      if (user?.role !== "admin" && next !== "student-dashboard") return;
+      if (user?.role !== "student" && next === "student-dashboard") return;
+      setPage(next);
+    };
+
+    window.addEventListener("bbai:navigate", handler);
+    return () => window.removeEventListener("bbai:navigate", handler);
+  }, [user]);
+
+
+
   useEffect(() => {
     if (loading || !user) return;
 

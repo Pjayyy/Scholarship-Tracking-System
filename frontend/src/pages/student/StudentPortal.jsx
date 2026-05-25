@@ -23,6 +23,39 @@ function StudentPortal({ page }) {
     setRefreshTrigger((prev) => prev + 1);
   };
 
+  // Presence heartbeat for Admin Dashboard "Online Now"
+  // Sends a heartbeat every ~15 seconds while the student portal is mounted.
+  useEffect(() => {
+    const intervalMs = 15000;
+    let timer = null;
+
+    const sendHeartbeat = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const API_URL = process.env.REACT_APP_API_URL || "http://192.168.0.244:5000";
+        await fetch(`${API_URL}/dashboard/presence/heartbeat`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({}),
+        });
+      } catch {
+        // ignore presence errors
+      }
+    };
+
+    // initial ping + interval
+    void sendHeartbeat();
+    timer = setInterval(() => void sendHeartbeat(), intervalMs);
+
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, []);
+
   useEffect(() => {
     let mounted = true;
 
@@ -118,7 +151,11 @@ function StudentPortal({ page }) {
     };
   }, [refreshTrigger]);
 
+  // Presence heartbeat: stop sending when student portal unmounts (logout/navigation away)
+  // Implemented via interval cleanup in the heartbeat useEffect above.
+
   const CurrentPage = useMemo(() => {
+
     if (page === "student-profile") return StudentProfile;
     if (page === "student-qr") return StudentQRCode;
     if (page === "student-attendance") return AttendanceHistory;

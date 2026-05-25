@@ -1,22 +1,151 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { FiRefreshCcw, FiUsers, FiUserCheck, FiShield, FiBell, FiSettings, FiAward, FiTrendingUp, FiClock, FiCheckCircle, FiAlertCircle, FiArrowRight, FiStar, FiActivity, FiPieChart } from "react-icons/fi";
 import { toast } from "react-toastify";
 import API from "../../services/api";
 
+function clamp(n, min, max) {
+  return Math.max(min, Math.min(max, n));
+}
+
+function formatAnnTime(a) {
+  try {
+    const ts = a.receivedAt || a.createdAt;
+    if (!ts) return "—";
+    const d = new Date(ts);
+    if (Number.isNaN(d.getTime())) return "—";
+    const diffMs = Date.now() - d.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays <= 0) return "today";
+    if (diffDays === 1) return "1 day ago";
+    return `${diffDays} days ago`;
+  } catch {
+    return "—";
+  }
+}
+
 function Dashboard() {
+  // Real-time: SSE for admin announcement ingestion/dispatched events
+  // We update dashboard announcement list + monitoring/proxies on each event.
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    if (!token) return;
+    const base = process.env.REACT_APP_API_URL || "http://127.0.0.1:5000";
+    const url = `${base}/admin/announcements/stream?token=${encodeURIComponent(token)}`;
+
+    let es = null;
+    let timer = null;
+
+    const refresh = () => {
+      void API.get("/dashboard/monitoring-stats")
+        .then((r) => setMonitoring(r.data?.data || r.data))
+        .catch(() => {});
+      void API.get("/dashboard/status-distribution")
+        .then((r) => setStatus(r.data?.data || r.data))
+        .catch(() => {});
+      void API.get("/admin/announcements")
+        .then((r) => {
+          const list = r.data?.data || [];
+          setAnnouncements(list.slice(0, 3));
+        })
+        .catch(() => {});
+    };
+
+    try {
+      es = new EventSource(url);
+      esRef.current = es;
+
+      // Real-time refresh based on announcement ingest/dispatch events.
+      es.addEventListener("ingested", () => refresh());
+      es.addEventListener("dispatched", () => refresh());
+
+      es.addEventListener("error", () => {
+        // SSE errors are expected during reconnects; keep UI working.
+      });
+
+      // Additional polling so Online Now updates even when there are no announcements.
+      timer = setInterval(() => refresh(), 1000);
+
+
+      // initial refresh
+      refresh();
+
+      return () => {
+        if (timer) clearInterval(timer);
+        es?.close?.();
+      };
+    } catch {
+      if (timer) clearInterval(timer);
+      return undefined;
+    }
+  }, [token]);
+
   const [totalStudents, setTotalStudents] = useState(0);
   const [totalUsers, setTotalUsers] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [monthly, setMonthly] = useState(null);
+  const [status, setStatus] = useState(null);
+  const [monitoring, setMonitoring] = useState(null);
+  const [announcements, setAnnouncements] = useState([]);
+
+  const esRef = useRef(null);
+
+  const API_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:5000";
+
+  const defaultAnnouncement = useMemo(
+    () => [
+      { id: "d1", title: "No new announcements yet", bodyText: "Sync Gmail or dispatch pending announcements to see updates.", emailDispatchedAt: null, receivedAt: null, createdAt: new Date().toISOString() },
+    ],
+    []
+  );
+
+  const calcPct = (n, denom) => {
+    const d = Number(denom);
+    if (!Number.isFinite(d) || d <= 0) return 0;
+    return clamp(Math.round(((Number(n) || 0) / d) * 100), 0, 100);
+  };
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const statsRes = await API.get("/dashboard/stats");
-      setTotalStudents(statsRes.data.students);
-      setTotalUsers(statsRes.data.users);
+
+      const [statsRes, monthlyRes, statusRes, monitoringRes, annRes] =
+        await Promise.allSettled([
+          API.get("/dashboard/stats"),
+          API.get("/dashboard/monthly-distribution"),
+          API.get("/dashboard/status-distribution"),
+          API.get("/dashboard/monitoring-stats"),
+          API.get("/admin/announcements"),
+        ]);
+
+      if (statsRes.status === "fulfilled") {
+        setTotalStudents(statsRes.value.data.students);
+        setTotalUsers(statsRes.value.data.users);
+      }
+
+      if (monthlyRes.status === "fulfilled") {
+        const m = monthlyRes.value.data || {};
+        const maxAwards = Math.max(1, ...(m.awards || [1]));
+        const maxApps = Math.max(1, ...(m.applications || [1]));
+        setMonthly({ ...m, max: Math.max(maxAwards, maxApps) });
+      }
+
+      if (statusRes.status === "fulfilled") {
+        setStatus(statusRes.value.data || null);
+      }
+
+      if (monitoringRes.status === "fulfilled") {
+        setMonitoring(monitoringRes.value.data || null);
+      }
+
+      if (annRes.status === "fulfilled") {
+        const list = annRes.value.data?.data || [];
+        setAnnouncements(list.slice(0, 3));
+      }
     } catch (err) {
       console.error(err);
       setError("Failed to fetch data");
@@ -84,18 +213,32 @@ function Dashboard() {
               <FiActivity />
               <span>Academic Year 2025-2026</span>
             </div>
-            <h1 className="hero-title">Smart Scholarship<br /><span className="hero-highlight">Tracking & Monitoring</span></h1>
+            <h1 className="hero-title">Scholarship<br /><span className="hero-highlight">Tracking & Monitoring</span></h1>
             <p className="hero-subtitle">Comprehensive management system for scholarship grants, beneficiary tracking, and academic performance analytics.</p>
             <div className="hero-actions">
-              <button className="btn btn-primary-large">
+              <button
+                className="btn btn-primary-large"
+                type="button"
+                onClick={() => {
+                  // App page routing uses local state in App.jsx
+                  window.dispatchEvent(new CustomEvent("bbai:navigate", { detail: { page: "analytics" } }));
+                }}
+              >
                 <FiTrendingUp />
                 View Analytics
               </button>
-              <button className="btn btn-secondary-large">
+              <button
+                className="btn btn-secondary-large"
+                type="button"
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent("bbai:navigate", { detail: { page: "forecast" } }));
+                }}
+              >
                 <FiAward />
                 Generate Report
               </button>
             </div>
+
           </div>
           <div className="hero-right">
             <div className="graduation-cap-container">
@@ -167,7 +310,7 @@ function Dashboard() {
         <StatCard icon={<FiShield />} title="Total Users" value={totalUsers} gradientClass="stat-scanned" trend="System administrators" />
       </div>
 
-      {/* Main Content Grid */}
+        {/* Main Content Grid */}
       <div className="dashboard-grid">
         {/* Analytics Chart Card */}
         <div className="futuristic-card chart-card">
@@ -183,14 +326,29 @@ function Dashboard() {
           </div>
           <div className="chart-container">
             <div className="bar-chart">
-              {[65, 85, 45, 90, 75, 95, 70, 88, 60, 92, 78, 85].map((height, i) => (
-                <div key={i} className="bar-wrapper">
-                  <div className="bar" style={{ height: `${height}%` }}>
-                    <div className="bar-glow"></div>
-                  </div>
-                  <span className="bar-label">{['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i]}</span>
-                </div>
-              ))}
+              {monthly?.labels?.length
+                ? monthly.labels.map((label, i) => {
+                    const awardsVal = monthly.awards?.[i] ?? 0;
+                    const appsVal = monthly.applications?.[i] ?? 0;
+                    const denom = Math.max(1, monthly.max || Math.max(...(monthly.awards || [1])));
+                    const height = Math.round(((awardsVal + appsVal) / denom) * 100);
+                    return (
+                      <div key={label} className="bar-wrapper">
+                        <div className="bar" style={{ height: `${clamp(height, 0, 100)}%` }}>
+                          <div className="bar-glow"></div>
+                        </div>
+                        <span className="bar-label">{label}</span>
+                      </div>
+                    );
+                  })
+                : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((label, i) => (
+                    <div key={label} className="bar-wrapper">
+                      <div className="bar" style={{ height: `${20 + i * 4}%` }}>
+                        <div className="bar-glow"></div>
+                      </div>
+                      <span className="bar-label">{label}</span>
+                    </div>
+                  ))}
             </div>
           </div>
         </div>
@@ -204,33 +362,80 @@ function Dashboard() {
             </div>
           </div>
           <div className="donut-container">
-            <svg className="donut" viewBox="0 0 200 200">
-              <circle cx="100" cy="100" r="70" fill="none" stroke="rgba(108, 99, 255, 0.2)" strokeWidth="25"/>
-              <circle cx="100" cy="100" r="70" fill="none" stroke="url(#donutGradient1)" strokeWidth="25"
-                strokeDasharray="130 310" strokeDashoffset="0" transform="rotate(-90 100 100)"/>
-              <circle cx="100" cy="100" r="70" fill="none" stroke="url(#donutGradient2)" strokeWidth="25"
-                strokeDasharray="95 345" strokeDashoffset="-130" transform="rotate(-90 100 100)"/>
-              <circle cx="100" cy="100" r="70" fill="none" stroke="url(#donutGradient3)" strokeWidth="25"
-                strokeDasharray="65 375" strokeDashoffset="-225" transform="rotate(-90 100 100)"/>
-              <circle cx="100" cy="100" r="70" fill="none" stroke="url(#donutGradient4)" strokeWidth="25"
-                strokeDasharray="150 290" strokeDashoffset="-290" transform="rotate(-90 100 100)"/>
-              <defs>
-                <linearGradient id="donutGradient1"><stop offset="0%" stopColor="#6C63FF"/><stop offset="100%" stopColor="#4F46E5"/></linearGradient>
-                <linearGradient id="donutGradient2"><stop offset="0%" stopColor="#10b981"/><stop offset="100%" stopColor="#059669"/></linearGradient>
-                <linearGradient id="donutGradient3"><stop offset="0%" stopColor="#f59e0b"/><stop offset="100%" stopColor="#d97706"/></linearGradient>
-                <linearGradient id="donutGradient4"><stop offset="0%" stopColor="#A5B4FC"/><stop offset="100%" stopColor="#818cf8"/></linearGradient>
-              </defs>
-            </svg>
-            <div className="donut-center">
-              <span className="donut-value">1,247</span>
-              <span className="donut-label">Total</span>
-            </div>
+            {/* Render 4 rings based on percent values */}
+            {(() => {
+              const statuses = status?.statuses || [];
+              const pSafe = statuses.find((s) => s.key === "SAFE")?.percent ?? 0;
+              const pWarning = statuses.find((s) => s.key === "WARNING")?.percent ?? 0;
+              const pAtRisk = statuses.find((s) => s.key === "AT RISK")?.percent ?? 0;
+              const pProbation = statuses.find((s) => s.key === "PROBATION")?.percent ?? 0;
+              const r = 70;
+              const circ = 2 * Math.PI * r;
+              const dash = (percent) => (circ * percent) / 100;
+              let offset = 0;
+              const segments = [
+                { grad: "donutGradient1", percent: pSafe },
+                { grad: "donutGradient2", percent: pWarning },
+                { grad: "donutGradient3", percent: pAtRisk },
+                { grad: "donutGradient4", percent: pProbation },
+              ];
+
+              return (
+                <>
+                  <svg className="donut" viewBox="0 0 200 200">
+                    <circle cx="100" cy="100" r="70" fill="none" stroke="rgba(108, 99, 255, 0.2)" strokeWidth="25" />
+                    {segments.map((seg, idx) => {
+                      const d = dash(seg.percent);
+                      const gap = circ - d;
+                      const curOffset = -offset;
+                      offset += d;
+                      return (
+                        <circle
+                          key={idx}
+                          cx="100"
+                          cy="100"
+                          r="70"
+                          fill="none"
+                          stroke={`url(#${seg.grad})`}
+                          strokeWidth="25"
+                          strokeDasharray={`${d} ${gap}`}
+                          strokeDashoffset={curOffset}
+                          transform="rotate(-90 100 100)"
+                        />
+                      );
+                    })}
+                    <defs>
+                      <linearGradient id="donutGradient1"><stop offset="0%" stopColor="#6C63FF" /><stop offset="100%" stopColor="#4F46E5" /></linearGradient>
+                      <linearGradient id="donutGradient2"><stop offset="0%" stopColor="#10b981" /><stop offset="100%" stopColor="#059669" /></linearGradient>
+                      <linearGradient id="donutGradient3"><stop offset="0%" stopColor="#f59e0b" /><stop offset="100%" stopColor="#d97706" /></linearGradient>
+                      <linearGradient id="donutGradient4"><stop offset="0%" stopColor="#A5B4FC" /><stop offset="100%" stopColor="#818cf8" /></linearGradient>
+                    </defs>
+                  </svg>
+                  <div className="donut-center">
+                    <span className="donut-value">{status?.total ?? 0}</span>
+                    <span className="donut-label">Total</span>
+                  </div>
+                </>
+              );
+            })()}
           </div>
           <div className="donut-legend">
-            <div className="donut-legend-item"><span className="legend-bar" style={{background: 'linear-gradient(135deg, #6C63FF, #4F46E5)'}}></span>Active (42%)</div>
-            <div className="donut-legend-item"><span className="legend-bar" style={{background: 'linear-gradient(135deg, #10b981, #059669)'}}></span>Compliant (30%)</div>
-            <div className="donut-legend-item"><span className="legend-bar" style={{background: 'linear-gradient(135deg, #f59e0b, #d97706)'}}></span>Pending (21%)</div>
-            <div className="donut-legend-item"><span className="legend-bar" style={{background: 'linear-gradient(135deg, #A5B4FC, #818cf8)'}}></span>Probation (7%)</div>
+            {(() => {
+              const statuses = status?.statuses || [];
+              const get = (key) => statuses.find((s) => s.key === key);
+              const safe = get("SAFE")?.percent ?? 0;
+              const warning = get("WARNING")?.percent ?? 0;
+              const atRisk = get("AT RISK")?.percent ?? 0;
+              const probation = get("PROBATION")?.percent ?? 0;
+              return (
+                <>
+                  <div className="donut-legend-item"><span className="legend-bar" style={{ background: 'linear-gradient(135deg, #6C63FF, #4F46E5)' }}></span>Active ({safe}%)</div>
+                  <div className="donut-legend-item"><span className="legend-bar" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}></span>Compliant ({warning}%)</div>
+                  <div className="donut-legend-item"><span className="legend-bar" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}></span>Pending ({atRisk}%)</div>
+                  <div className="donut-legend-item"><span className="legend-bar" style={{ background: 'linear-gradient(135deg, #A5B4FC, #818cf8)' }}></span>Probation ({probation}%)</div>
+                </>
+              );
+            })()}
           </div>
         </div>
 
@@ -241,33 +446,24 @@ function Dashboard() {
               <h3><FiBell /> Announcements</h3>
               <span className="card-subtitle">Latest scholarship news</span>
             </div>
-            <button className="btn-small">View All</button>
+            <button className="btn-small" type="button" onClick={() => window.dispatchEvent(new CustomEvent("bbai:navigate", { detail: { page: "notifications" } }))}>View All</button>
           </div>
           <div className="announcement-list">
-            <div className="announcement-item announcement-urgent">
-              <div className="announcement-icon"><FiAlertCircle /></div>
-              <div className="announcement-content">
-                <h4>Deadline: Semester Reimbursement</h4>
-                <p>Submission deadline approaching. All grantees must submit documents by May 30, 2026.</p>
-                <span className="announcement-time"><FiClock /> 2 days remaining</span>
+            {(announcements?.length ? announcements : defaultAnnouncement).map((a, idx) => (
+              <div key={a.id || idx} className={`announcement-item ${a.emailDispatchedAt ? "" : "announcement-urgent"}`}
+                onClick={() => window.dispatchEvent(new CustomEvent("bbai:navigate", { detail: { page: "notifications" } }))}
+                role="button" tabIndex={0}
+              >
+                <div className="announcement-icon">
+                  {a.emailDispatchedAt ? <FiCheckCircle /> : <FiAlertCircle />}
+                </div>
+                <div className="announcement-content">
+                  <h4>{a.title || "—"}</h4>
+                  <p>{(a.bodyText || "").slice(0, 120) || "No content"}</p>
+                  <span className="announcement-time"><FiClock /> {formatAnnTime(a)}</span>
+                </div>
               </div>
-            </div>
-            <div className="announcement-item">
-              <div className="announcement-icon"><FiCheckCircle /></div>
-              <div className="announcement-content">
-                <h4>Q2 Disbursement Complete</h4>
-                <p>$1.2M disbursed to 847 eligible grantees for Academic Year 2025-2026 Q2.</p>
-                <span className="announcement-time"><FiClock /> Posted 3 days ago</span>
-              </div>
-            </div>
-            <div className="announcement-item">
-              <div className="announcement-icon"><FiStar /></div>
-              <div className="announcement-content">
-                <h4>Dean's List Recognition</h4>
-                <p>Congratulations to 124 scholars who made the Dean's List for Fall 2025 semester.</p>
-                <span className="announcement-time"><FiClock /> Posted 1 week ago</span>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
@@ -279,19 +475,19 @@ function Dashboard() {
             </div>
           </div>
           <div className="quick-actions-grid">
-            <button className="quick-action-btn">
+            <button className="quick-action-btn" type="button" onClick={() => window.dispatchEvent(new CustomEvent("bbai:navigate", { detail: { page: "document-scan" } }))}>
               <div className="qa-icon"><FiUserCheck /></div>
               <span>Add Scholar</span>
             </button>
-            <button className="quick-action-btn">
+            <button className="quick-action-btn" type="button" onClick={() => window.dispatchEvent(new CustomEvent("bbai:navigate", { detail: { page: "forecast" } }))}>
               <div className="qa-icon"><FiAward /></div>
               <span>New Award</span>
             </button>
-            <button className="quick-action-btn">
+            <button className="quick-action-btn" type="button" onClick={() => window.dispatchEvent(new CustomEvent("bbai:navigate", { detail: { page: "document-scan" } }))}>
               <div className="qa-icon"><FiCheckCircle /></div>
               <span>Verify Docs</span>
             </button>
-            <button className="quick-action-btn">
+            <button className="quick-action-btn" type="button" onClick={() => window.dispatchEvent(new CustomEvent("bbai:navigate", { detail: { page: "analytics" } }))}>
               <div className="qa-icon"><FiTrendingUp /></div>
               <span>Generate Report</span>
             </button>
@@ -308,19 +504,19 @@ function Dashboard() {
           </div>
           <div className="monitoring-stats">
             <div className="monitor-stat">
-              <span className="monitor-value">847</span>
+              <span className="monitor-value">{monitoring?.onlineNow ?? 0}</span>
               <span className="monitor-label">Online Now</span>
-              <div className="monitor-bar"><div className="monitor-fill" style={{width: '78%'}}></div></div>
+              <div className="monitor-bar"><div className="monitor-fill" style={{ width: `${calcPct(monitoring?.onlineNow, monitoring?.totalScannedToday) }%` }}></div></div>
             </div>
             <div className="monitor-stat">
-              <span className="monitor-value">156</span>
+              <span className="monitor-value">{monitoring?.verifyingDocs ?? 0}</span>
               <span className="monitor-label">Verifying Documents</span>
-              <div className="monitor-bar"><div className="monitor-fill monitor-fill-warning" style={{width: '45%'}}></div></div>
+              <div className="monitor-bar"><div className="monitor-fill monitor-fill-warning" style={{ width: `${calcPct(monitoring?.verifyingDocs, monitoring?.totalScannedToday) }%` }}></div></div>
             </div>
             <div className="monitor-stat">
-              <span className="monitor-value">23</span>
+              <span className="monitor-value">{monitoring?.pendingApproval ?? 0}</span>
               <span className="monitor-label">Pending Approval</span>
-              <div className="monitor-bar"><div className="monitor-fill monitor-fill-danger" style={{width: '15%'}}></div></div>
+              <div className="monitor-bar"><div className="monitor-fill monitor-fill-danger" style={{ width: `${calcPct(monitoring?.pendingApproval, monitoring?.totalScannedToday) }%` }}></div></div>
             </div>
           </div>
         </div>

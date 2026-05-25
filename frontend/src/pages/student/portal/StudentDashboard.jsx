@@ -182,10 +182,9 @@ function StudentDashboard({ studentData }) {
             style={{
               borderRadius: 18,
               padding: "1rem",
-              background: "rgba(2,6,23,0.25)",
-              border: "1px solid rgba(148,163,184,0.18)",
             }}
           >
+
             <div className="kvp-label" style={{ marginBottom: 10 }}>
               Current
             </div>
@@ -332,15 +331,16 @@ function StudentDashboard({ studentData }) {
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
           <div>
-            <div
+                <div
               style={{
-                background: `${riskColor}1A`,
-                border: `1px solid ${riskColor}55`,
                 borderRadius: 18,
                 padding: "1rem",
                 marginBottom: "1rem",
+                border: "1px solid rgba(148,163,184,0.18)",
+                background: "var(--surface-highlight)",
               }}
             >
+
               <div style={{ display: "flex", gap: "0.8rem", alignItems: "center" }}>
                 <FiAlertCircle color={riskColor} />
                 <div>

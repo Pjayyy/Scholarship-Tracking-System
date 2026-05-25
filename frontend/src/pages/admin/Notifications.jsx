@@ -3,21 +3,23 @@ import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "react-toastify";
 import {
   FaBell,
-  FaBolt,
   FaChartLine,
   FaChevronDown,
   FaChevronUp,
   FaInfoCircle,
-  FaQrcode,
   FaSearch,
   FaShieldAlt,
   FaSyncAlt,
   FaTrashAlt,
-  FaUserCheck,
+  FaCalendarAlt,
+  FaChevronLeft,
+  FaChevronRight,
   FaClipboardList,
 } from "react-icons/fa";
 import API from "../../services/api";
 import "../../styles/Notifications.css";
+import "../../styles/LatestAnnouncements.css";
+
 
 const categoryMap = {
   forecast: { label: "Audit", icon: FaChartLine, accent: "var(--secondary)" },
@@ -154,6 +156,12 @@ function Notifications() {
   const [annLoading, setAnnLoading] = useState(true);
   const [annSearch, setAnnSearch] = useState("");
   const [annSource, setAnnSource] = useState("all");
+  const [annStatus, setAnnStatus] = useState("all");
+
+
+  // Latest announcements (premium feed) pagination state
+  const [latestPage, setLatestPage] = useState(1);
+  const latestPageSize = 6;
   const [annExpandedId, setAnnExpandedId] = useState(null);
   const [filterCategory, setFilterCategory] = useState("all");
   const [sortBy, setSortBy] = useState("latest");
@@ -177,15 +185,35 @@ function Notifications() {
 
   const filteredAnnouncements = useMemo(() => {
     const term = annSearch.trim().toLowerCase();
+
     return (announcements || [])
       .filter((a) => {
         if (annSource !== "all" && String(a.source || "") !== annSource) return false;
+
+        const enabled = Boolean(a.emailDispatchedAt);
+        const hasError = Boolean(a.dispatchError);
+
+        if (annStatus !== "all") {
+          if (annStatus === "enabled" && !enabled) return false;
+          if (annStatus === "pending" && (enabled || hasError)) return false;
+          if (annStatus === "errors" && !hasError) return false;
+        }
+
         if (!term) return true;
         const hay = `${a.title || ""} ${a.fromAddress || ""} ${a.bodyText || ""}`.toLowerCase();
         return hay.includes(term);
       })
       .slice(0, 200);
-  }, [annSearch, annSource, announcements]);
+  }, [annSearch, annSource, annStatus, announcements]);
+
+
+  const latestAnnouncementsTotal = filteredAnnouncements.length;
+  const latestAnnouncementsTotalPages = Math.max(1, Math.ceil(latestAnnouncementsTotal / latestPageSize));
+  const latestAnnouncements = useMemo(() => {
+    const safePage = Math.min(latestPage, latestAnnouncementsTotalPages);
+    const start = (safePage - 1) * latestPageSize;
+    return filteredAnnouncements.slice(start, start + latestPageSize);
+  }, [filteredAnnouncements, latestPage, latestAnnouncementsTotalPages]);
 
   const announcementStats = useMemo(() => {
     const list = filteredAnnouncements || [];
@@ -389,171 +417,123 @@ function Notifications() {
         </div>
       </motion.section>
 
-      <section className="card card-glass" style={{ margin: "0 0 1.25rem" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "1rem",
-            padding: "1rem 1.25rem",
-            borderBottom: "1px solid rgba(148,163,184,0.25)",
-          }}
-        >
+      <section className="latest-announcements-card">
+        <div className="latest-announcements-topbar">
           <div>
-            <div className="kicker">Official</div>
-            <h3 style={{ margin: 0 }}>CHED announcements</h3>
+            <div className="latest-announcements-kicker">Latest Announcements</div>
+            <div className="latest-announcements-title">Neon timeline feed</div>
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-            <div className="search-group" style={{ minWidth: 260 }}>
-              <FaSearch className="search-icon" />
-              <input
-                className="search-input"
-                type="search"
-                placeholder="Search announcements…"
-                value={annSearch}
-                onChange={(e) => setAnnSearch(e.target.value)}
-              />
-            </div>
-            <div className="select-group" style={{ minWidth: 160 }}>
-              <label>Source</label>
-              <select value={annSource} onChange={(e) => setAnnSource(e.target.value)}>
-                <option value="all">All</option>
-                <option value="gmail">Gmail</option>
-                <option value="manual">Manual</option>
-              </select>
-            </div>
+
+          <button
+            type="button"
+            className="latest-clear-btn"
+            onClick={() => {
+              setAnnouncements([]);
+              setLatestPage(1);
+              toast.warning("Announcements cleared");
+            }}
+          >
+            Clear
+          </button>
+        </div>
+
+        <div className="latest-announcements-subbar">
+          <div className="latest-count">
+            <span className="latest-count-label">Showing</span>
+            <span className="latest-count-value">{latestAnnouncements.length}</span>
+            <span className="latest-count-label">of</span>
+            <span className="latest-count-value">{latestAnnouncementsTotal}</span>
+          </div>
+
+          <div className="latest-pagination">
+            <button
+              type="button"
+              className={latestPage <= 1 ? "latest-page-btn disabled" : "latest-page-btn"}
+              onClick={() => latestPage > 1 && setLatestPage((p) => p - 1)}
+              disabled={latestPage <= 1}
+            >
+              <FaChevronLeft />
+            </button>
+
+            {Array.from({ length: latestAnnouncementsTotalPages }, (_, i) => i + 1)
+              .slice(Math.max(0, latestPage - 3), Math.min(latestAnnouncementsTotalPages, latestPage + 2))
+              .map((pageNum) => (
+                <button
+                  key={pageNum}
+                  type="button"
+                  className={pageNum === latestPage ? "latest-page-pill active" : "latest-page-pill"}
+                  onClick={() => setLatestPage(pageNum)}
+                >
+                  {pageNum}
+                </button>
+              ))}
+
+            <button
+              type="button"
+              className={latestPage >= latestAnnouncementsTotalPages ? "latest-page-btn disabled" : "latest-page-btn"}
+              onClick={() => latestPage < latestAnnouncementsTotalPages && setLatestPage((p) => p + 1)}
+              disabled={latestPage >= latestAnnouncementsTotalPages}
+            >
+              <FaChevronRight />
+            </button>
           </div>
         </div>
 
-        <div style={{ padding: "1rem 1.25rem" }}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-              gap: 12,
-              marginBottom: 12,
-            }}
-          >
-            <div className="stat-card" style={{ margin: 0 }}>
-              <div className="stat-head">
-                <FaClipboardList />
-                <span>Total</span>
-              </div>
-              <strong>{announcementStats.total}</strong>
-              <small style={{ color: "var(--text-secondary)" }}>Filtered</small>
-            </div>
-            <div className="stat-card" style={{ margin: 0 }}>
-              <div className="stat-head">
-                <FaBell />
-                <span>Pending</span>
-              </div>
-              <strong>{announcementStats.pending}</strong>
-              <small style={{ color: "var(--text-secondary)" }}>Needs dispatch</small>
-            </div>
-            <div className="stat-card" style={{ margin: 0 }}>
-              <div className="stat-head">
-                <FaShieldAlt />
-                <span>Emailed</span>
-              </div>
-              <strong>{announcementStats.emailed}</strong>
-              <small style={{ color: "var(--text-secondary)" }}>Sent to students</small>
-            </div>
-            <div className="stat-card" style={{ margin: 0 }}>
-              <div className="stat-head">
-                <FaInfoCircle />
-                <span>Errors</span>
-              </div>
-              <strong>{announcementStats.errors}</strong>
-              <small style={{ color: "var(--text-secondary)" }}>Dispatch failed</small>
-            </div>
-          </div>
-          {announcementStats.latestAt ? (
-            <div style={{ marginBottom: 10, color: "var(--text-secondary)", fontSize: "0.9rem" }}>
-              Latest announcement: <strong>{formatTimestamp(announcementStats.latestAt.toISOString())}</strong>
-            </div>
-          ) : null}
+        <div className="latest-announcements-feed">
           {annLoading ? (
-            <div style={{ color: "var(--text-secondary)" }}>Loading…</div>
-          ) : filteredAnnouncements.length === 0 ? (
-            <div style={{ color: "var(--text-secondary)" }}>
-              No announcements yet.
-            </div>
+            <div className="latest-loading">Loading announcements…</div>
+          ) : latestAnnouncements.length === 0 ? (
+            <div className="latest-empty">No announcements found.</div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 420, overflow: "auto" }}>
-              {filteredAnnouncements.map((a) => {
-                const ok = Boolean(a.emailDispatchedAt);
-                const hasError = Boolean(a.dispatchError);
-                const isExpanded = annExpandedId === a.id;
+            <div className="latest-timeline">
+              {latestAnnouncements.map((a) => {
+                const senderEmail = a.fromAddress || a.senderEmail || a.from || "unknown@domain.com";
+                const tsRaw = a.receivedAt || a.createdAt || a.timestamp;
+                const ts = tsRaw ? new Date(tsRaw).toISOString() : "";
+                const tsLabel = tsRaw ? new Date(tsRaw).toLocaleString() : "—";
+                const dispatched = Boolean(a.emailDispatchedAt);
 
                 return (
-                  <div
-                    key={a.id}
-                    style={{
-                      border: "1px solid rgba(148,163,184,0.25)",
-                      borderRadius: 14,
-                      padding: "0.9rem 1rem",
-                      background: "rgba(15,23,42,0.02)",
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 900, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          #{a.id} • {a.title || "—"}
-                        </div>
-                        <div style={{ marginTop: 4, color: "var(--text-secondary)", fontSize: "0.85rem" }}>
-                          <span style={{ marginRight: 10 }}>Source: {a.source}</span>
-                          {a.fromAddress ? <span style={{ marginRight: 10 }}>From: {a.fromAddress}</span> : null}
-                          <span>
-                            {a.receivedAt
-                              ? new Date(a.receivedAt).toLocaleString()
-                              : a.createdAt
-                                ? new Date(a.createdAt).toLocaleString()
-                                : "—"}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-                        <span
-                          className="priority-chip"
-                          style={{
-                            background: hasError ? "rgba(239, 68, 68, 0.1)" : ok ? "rgba(16, 185, 129, 0.1)" : "rgba(245, 158, 11, 0.1)",
-                            color: hasError ? "#ef4444" : ok ? "#10b981" : "#f59e0b",
-                          }}
-                          title={hasError ? a.dispatchError : ok ? "Email dispatched" : "Pending dispatch"}
-                        >
-                          {hasError ? "Error" : ok ? "Emailed" : "Pending"}
-                        </span>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline"
-                          onClick={() => setAnnExpandedId(isExpanded ? null : a.id)}
-                        >
-                          {isExpanded ? "Hide" : "View"}
-                        </button>
-                      </div>
+                  <article key={a.id} className="latest-feed-item">
+                    <div className="latest-left">
+                      <div className="latest-node" />
                     </div>
 
-                    {isExpanded ? (
-                      <div style={{ marginTop: 10 }}>
-                        {a.dispatchError ? (
-                          <div style={{ marginBottom: 10, color: "#b91c1c" }}>
-                            <strong>Dispatch error:</strong> {a.dispatchError}
-                          </div>
-                        ) : null}
-                        <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.5 }}>
-                          {(a.bodyText || "").slice(0, 8000) || "—"}
+                    <div className="latest-card">
+                      <div className="latest-card-body">
+                        <div className="latest-card-header">
+                          <h4 className="latest-ann-title">{a.title || "—"}</h4>
+                        </div>
+
+                        <p className="latest-ann-preview">{(a.bodyText || "").slice(0, 220) || "—"}</p>
+
+                        <div className="latest-sender">
+                          <span className="latest-sender-label">From</span>
+                          <span className="latest-sender-email">{senderEmail}</span>
                         </div>
                       </div>
-                    ) : null}
-                  </div>
+
+                      <div className="latest-meta-right">
+                        <div className="latest-timestamp">
+                          <FaCalendarAlt className="latest-calendar" />
+                          <span>{tsLabel}</span>
+                        </div>
+                        <div className={dispatched ? "latest-status ok" : "latest-status pending"}>
+                          {dispatched ? "Emailed" : "Pending"}
+                        </div>
+                      </div>
+                    </div>
+                  </article>
                 );
               })}
             </div>
           )}
         </div>
       </section>
+
+
+
+      {/* </section> */}
 
       <div className="notifications-grid">
         <section className="notification-main">

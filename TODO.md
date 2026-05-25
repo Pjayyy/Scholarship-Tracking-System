@@ -1,17 +1,7 @@
-# TODO
+# TODO - Student UI color alignment
 
-## Latest Announcements futuristic UI (glassmorphism / neon)
-
-- [x] Update `frontend/src/pages/student/portal/StudentDashboard.jsx` “Latest Announcements” section markup to match the futuristic neon timeline feed:
-  - [x] neon left timeline connector
-  - [x] sender email highlighted in purple accent
-  - [x] right-aligned timestamp with minimalist calendar icon
-  - [x] glowing top-right “Clear” button
-  - [x] notification cards with rounded corners, soft blur, neon border glow, subtle hover glow
-  - [x] neon pagination controls with active state
-
-- [x] Add/extend CSS in `frontend/src/index.css` for the new component styles (dark navy/deep purple gradient background, ambient lighting, timeline connector glow, pagination, buttons).
-
-- [x] Quick sanity check by searching for the new classNames to ensure no typos.
-
+- [ ] Step 1: Replace student portal base colors in `frontend/src/pages/student/StudentPortal.css` with the same “dashboard” tokens used by admin (glass panels, stat cards, hero gradients, primary/success/warning/danger).
+- [ ] Step 2: Update `frontend/src/pages/student/portal/StudentDashboard.jsx` to remove hardcoded inline colors/backgrounds and rely on shared classNames (e.g., `card-glass`, `panel`, `stat-card`, `futuristic-card`, `hero-section`).
+- [ ] Step 3: Ensure student stat cards/kvp blocks use the same gradients + border alpha as admin cards.
+- [ ] Step 4: Run frontend and do a quick visual check of Student dashboard vs Admin dashboard.
 

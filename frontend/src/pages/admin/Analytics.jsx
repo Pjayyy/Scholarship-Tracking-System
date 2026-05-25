@@ -15,7 +15,8 @@ import {
   Legend,
 } from "chart.js";
 
-import { Bar, Line, Pie } from "react-chartjs-2";
+import { Bar, Pie } from "react-chartjs-2";
+
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, ArcElement, Tooltip, Legend);
 
@@ -66,12 +67,14 @@ function Analytics() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Keep chart/cards functional even if API returns empty payloads
   const riskCounts = useMemo(() => {
-    const safe = riskData.filter((r) => r.risk_level === "SAFE").length;
-    const warn = riskData.filter((r) => r.risk_level === "WARNING").length;
-    const risk = riskData.filter((r) => r.risk_level === "AT RISK").length;
+    const safe = riskData.filter((r) => String(r?.risk_level).toUpperCase() === "SAFE").length;
+    const warn = riskData.filter((r) => String(r?.risk_level).toUpperCase() === "WARNING").length;
+    const risk = riskData.filter((r) => String(r?.risk_level).toUpperCase() === "AT RISK").length;
     return { safe, warn, risk };
   }, [riskData]);
+
 
   let chartText = "#94a3b8";
   try {
@@ -98,15 +101,14 @@ function Analytics() {
         label: "System Overview",
         data: [students, users],
 
-        backgroundColor: ["rgba(34,197,94,0.75)", "rgba(56,189,248,0.75)"],
-        borderColor: ["rgba(34,197,94,0.95)", "rgba(56,189,248,0.95)"],
+        // Dashboard palette: purple/indigo + accent
+        backgroundColor: ["rgba(108,99,255,0.55)", "rgba(165,180,252,0.55)"],
+        borderColor: ["rgba(108,99,255,0.95)", "rgba(79,70,229,0.95)"],
 
         borderWidth: 1,
       },
     ],
   };
-
-
 
   const pieData = {
     labels: ["Safe", "Warning", "At Risk"],
@@ -122,67 +124,89 @@ function Analytics() {
 
   return (
     <div className="panel">
-      <section className="page-hero">
-        <div className="page-hero__row">
-          <div>
+      {/* Hero (match Dashboard theme) */}
+      <section className="hero-section">
+        <div className="hero-bg-effects">
+          <div className="hero-orb hero-orb-1"></div>
+          <div className="hero-orb hero-orb-2"></div>
+          <div className="hero-orb hero-orb-3"></div>
+          <div className="hero-grid"></div>
+        </div>
+
+        <div className="hero-content">
+          <div className="hero-left">
             <div className="kicker">Analytics</div>
-            <div className="page-title">System Insights</div>
-            <div className="page-subtitle">Overview, trends, and scholarship risk distribution.</div>
+            <h1 className="hero-title">
+               Scholarship<br />
+              <span className="hero-highlight">System Insights</span>
+            </h1>
+            <p className="hero-subtitle">Overview, trends, and scholarship risk distribution.</p>
           </div>
-          <div className="hero-actions">
-            <button className="btn btn-ghost" type="button" onClick={fetchData} disabled={loading}>
-              <FiRefreshCcw />
-              Refresh
-            </button>
+
+          <div className="hero-right">
+            <div className="hero-actions" style={{ justifyContent: 'flex-end' }}>
+              <button className="btn btn-ghost" type="button" onClick={fetchData} disabled={loading}>
+                <FiRefreshCcw />
+                Refresh
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
-      <div className="stat-card-grid">
+      {/* Stats */}
+      <div className="stat-card-grid" style={{ marginBottom: 24 }}>
         <div className="stat-card stat-present">
           <div className="stat-top">
             <div className="stat-icon">
               <FiBarChart2 />
             </div>
-            <div className="stat-title">Scholars</div>
+            <div className="stat-title">Total Scholars</div>
           </div>
           <div className="stat-value">{students}</div>
         </div>
+
         <div className="stat-card stat-scanned">
           <div className="stat-top">
             <div className="stat-icon">
               <FiActivity />
             </div>
-            <div className="stat-title">Users</div>
+            <div className="stat-title">Total Users</div>
           </div>
           <div className="stat-value">{users}</div>
         </div>
-
       </div>
 
-      <div className="attendance-two-col">
-        <div className="card card-glass">
-          <div className="panel-head">
-            <div className="panel-title">
-              <FiBarChart2 />
-              System Overview
+      {/* Charts (match Dashboard card layout) */}
+      <div className="dashboard-grid">
+        <div className="futuristic-card chart-card">
+          <div className="card-header">
+            <div className="card-title-group">
+              <h3>
+                <FiBarChart2 /> System Overview
+              </h3>
+              <span className="card-subtitle">Scholars & users snapshot</span>
             </div>
           </div>
-          <Bar data={barData} options={commonOptions} />
+          <div className="chart-container">
+            <Bar data={barData} options={commonOptions} />
+          </div>
         </div>
 
-        <div className="card card-glass">
-          <div className="panel-head">
-            <div className="panel-title">
-              <FiPieChart />
-              Risk Distribution
+        <div className="futuristic-card donut-card">
+          <div className="card-header">
+            <div className="card-title-group">
+              <h3>
+                <FiPieChart /> Risk Distribution
+              </h3>
+              <span className="card-subtitle">SAFE / WARNING / AT RISK</span>
             </div>
           </div>
-          <Pie data={pieData} options={{ responsive: true, plugins: { legend: { labels: { color: chartText } } } }} />
+          <div className="chart-container" style={{ height: 240 }}>
+            <Pie data={pieData} options={{ responsive: true, plugins: { legend: { labels: { color: chartText } } } }} />
+          </div>
         </div>
       </div>
-
-
     </div>
   );
 }

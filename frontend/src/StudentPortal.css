@@ -6,6 +6,30 @@
   font-family: inherit;
 }
 
+/* Align student portal base to the admin “futuristic” dashboard theme */
+.student-portal,
+.student-main {
+  color: var(--text-primary);
+}
+
+/* Reuse shared glass/card base from global styles */
+.student-portal .panel,
+.student-portal .card-glass,
+.student-portal .futuristic-card,
+.student-portal .page-hero {
+  font-family: inherit;
+}
+
+/* Let student cards inherit the same futuristic “glass” feel from global styles */
+.student-portal .card-glass,
+.student-portal .futuristic-card,
+.student-portal .panel,
+.student-portal .page-hero {
+  background: inherit;
+}
+
+
+
 /* Sidebar */
 .student-sidebar {
   width: 280px;
