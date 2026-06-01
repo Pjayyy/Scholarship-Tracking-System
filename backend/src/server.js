@@ -121,9 +121,11 @@ async function startServer() {
   // Allow process to crash fast on DB connection issues
   await db.query("SELECT 1");
 
-  app.listen(PORT, () => {
+  app.listen(PORT, "0.0.0.0", () => {
     // eslint-disable-next-line no-console
     console.log(`Server running on port ${PORT}`);
+
+
 
     const cron = require("node-cron");
 

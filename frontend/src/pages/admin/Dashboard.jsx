@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { FiRefreshCcw, FiUsers, FiUserCheck, FiShield, FiBell, FiSettings, FiAward, FiTrendingUp, FiClock, FiCheckCircle, FiAlertCircle, FiArrowRight, FiStar, FiActivity, FiPieChart } from "react-icons/fi";
 import { toast } from "react-toastify";
 import API from "../../services/api";
+import { getApiBaseUrl } from "../../services/apiBaseUrl";
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -31,7 +32,7 @@ function Dashboard() {
 
   useEffect(() => {
     if (!token) return;
-    const base = process.env.REACT_APP_API_URL || "http://127.0.0.1:5000";
+    const base = getApiBaseUrl();
     const url = `${base}/admin/announcements/stream?token=${encodeURIComponent(token)}`;
 
     let es = null;
@@ -93,7 +94,7 @@ function Dashboard() {
 
   const esRef = useRef(null);
 
-  const API_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:5000";
+  const API_URL = getApiBaseUrl();
 
   const defaultAnnouncement = useMemo(
     () => [

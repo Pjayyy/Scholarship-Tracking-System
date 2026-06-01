@@ -19,6 +19,7 @@ import {
 import API from "../../services/api";
 import "../../styles/Notifications.css";
 import "../../styles/LatestAnnouncements.css";
+import { getApiBaseUrl } from "../../services/apiBaseUrl";
 
 
 const categoryMap = {
@@ -259,7 +260,7 @@ function Notifications() {
 
     // Real-time admin announcements via SSE (falls back to periodic refresh).
     const token = localStorage.getItem("token");
-    const API_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:5000";
+    const API_URL = getApiBaseUrl();
     let es = null;
 
     try {

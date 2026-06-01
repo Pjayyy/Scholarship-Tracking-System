@@ -1,15 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { FiRefreshCw } from "react-icons/fi";
 import { toast } from "react-toastify";
+import { getApiBaseUrl } from "./services/apiBaseUrl";
 
 function AdminAnnouncements() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
 
-  const API_URL =
-    process.env.REACT_APP_API_URL ||
-    "http://127.0.0.1:5000";
+  const API_URL = getApiBaseUrl();
 
   const load = useCallback(async () => {
     const token = localStorage.getItem("token");

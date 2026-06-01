@@ -24,6 +24,7 @@ import { FiLogOut } from "react-icons/fi";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { getLoginVariant, STAFF_LOGIN_PATH } from "./auth/authRoute";
+import { getApiBaseUrl } from "../services/apiBaseUrl";
 
 
 function App() {
@@ -142,7 +143,7 @@ function App() {
           return;
         }
 
-        const API_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:5000";
+        const API_URL = getApiBaseUrl();
         const res = await fetch(`${API_URL}/student/me`, {
           method: "GET",
           headers: {

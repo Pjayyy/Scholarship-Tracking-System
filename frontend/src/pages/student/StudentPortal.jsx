@@ -10,6 +10,7 @@ import StudentNotifications from "./portal/StudentNotifications.jsx";
 import ScholarshipDetails from "./portal/ScholarshipDetails.jsx";
 import DocumentsRequirements from "./portal/DocumentsRequirements.jsx";
 import StudentSettings from "./portal/StudentSettings.jsx";
+import { getApiBaseUrl } from "../../services/apiBaseUrl";
 
 function StudentPortal({ page }) {
   const [studentData, setStudentData] = useState(null);
@@ -33,7 +34,7 @@ function StudentPortal({ page }) {
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
-        const API_URL = process.env.REACT_APP_API_URL || "http://192.168.0.244:5000";
+        const API_URL = getApiBaseUrl();
         await fetch(`${API_URL}/dashboard/presence/heartbeat`, {
           method: "POST",
           headers: {
@@ -73,7 +74,7 @@ function StudentPortal({ page }) {
           return;
         }
 
-        const API_URL = process.env.REACT_APP_API_URL || "http://192.168.0.244:5000";
+        const API_URL = getApiBaseUrl();
         const meRes = await fetch(`${API_URL}/student/me`, {
           method: "GET",
           headers: {
