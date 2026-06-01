@@ -78,7 +78,7 @@ async function login(req, res) {
       email = `${email}@scholarship.local`;
     }
 
-    const [rows] = await db.query(
+    const result = await db.query(
       `
         SELECT *
         FROM users
@@ -87,7 +87,10 @@ async function login(req, res) {
       [email]
     );
 
-    if (rows.length === 0) {
+    // mysql2/promise returns [rows, fields] sometimes; but pool.promise().query can also return rows directly.
+    const rows = Array.isArray(result) ? result[0] : result;
+
+    if (!rows || rows.length === 0) {
       return res.json({
         status: "failed",
         message: "User not found",
@@ -95,6 +98,7 @@ async function login(req, res) {
     }
 
     const user = rows[0];
+
 
     let isMatch = false;
     if (user.password && user.password.startsWith("$2")) {
