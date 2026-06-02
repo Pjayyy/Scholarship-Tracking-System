@@ -128,6 +128,7 @@ function GranteeDashboard() {
     // Personal
     fullName: "",
     name: "",
+    email: "",
     // DB values are ENUM('Male','Female'), so default to these strings.
     sex: "",
     birthdate: "",
@@ -299,6 +300,7 @@ function GranteeDashboard() {
       // Personal
       student_id: g.student_id ?? "",
       name: g.name ?? "",
+      email: g.email ?? "",
       sex: g.sex ?? "",
       birthdate: g.birthdate ? String(g.birthdate) : "",
 
@@ -353,6 +355,7 @@ function GranteeDashboard() {
           award_number: form.award_number ?? "",
           qr_code: form.qr_code ?? "",
           name: form.name,
+          email: form.email ?? "",
           course: form.course,
           year_level: form.year_level,
           scholarship_type: form.scholarship_type,
@@ -379,6 +382,7 @@ function GranteeDashboard() {
     try {
       await axios.put(`http://localhost:5000/students/${activeRowId}`, {
         name: form.name,
+        email: form.email ?? "",
         sex: form.sex ?? "",
         birthdate: form.birthdate ?? "",
         award_number: form.award_number ?? "",
@@ -615,6 +619,7 @@ function GranteeDashboard() {
               setForm({
                 // Personal
                 name: "",
+                email: "",
                 sex: "",
                 birthdate: "",
 
@@ -1062,6 +1067,17 @@ function GranteeDashboard() {
                       value={form.name}
                       onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
                       placeholder="Full Name"
+                    />
+                  </div>
+
+                  <div className="grantee-field">
+                    <div className="grantee-label">Email Address</div>
+                    <input
+                      type="email"
+                      className="grantee-input"
+                      value={form.email ?? ""}
+                      onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                      placeholder="student@email.com"
                     />
                   </div>
 

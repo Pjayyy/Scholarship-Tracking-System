@@ -1,0 +1,86 @@
+{\rtf1\ansi\deff0
+{\fonttbl{\f0 Calibri;}{\f1 Cambria;}}
+\paperw12240\paperh15840\margl1440\margr1440\margt1440\margb1440
+\fs24
+\pard\qc\b\f1\fs32 MQTT Implementation Documentation\par
+\pard\qc\b0\f0\fs24 Scholarship Tracking System\par
+\pard\qc June 2026\par
+\par
+\pard\b 1. Introduction\par
+\b0
+The Scholarship Tracking System now includes MQTT to support real-time announcement processing. MQTT is used as a lightweight messaging protocol between the announcement creation process and the announcement dispatch process.\par
+\par
+\pard\b 2. Purpose of MQTT in the System\par
+\b0
+The main purpose of MQTT is to allow the system to publish an event whenever a new announcement is added. Once the event is received, the backend can process and dispatch the announcement automatically. This improves the speed of announcement delivery and supports real-time communication inside the system.\par
+\par
+\pard\b 3. Where MQTT is Used\par
+\b0
+MQTT is implemented in the backend of the Scholarship Tracking System. It is mainly used in the announcement module.\par
+\par
+The following files are part of the implementation:\par
+- `backend/src/services/mqttClient.js` for MQTT connection, publish, and subscribe logic.\par
+- `backend/src/server.js` for starting the MQTT client during backend startup.\par
+- `backend/src/controllers/announcementAdmin.controller.js` for publishing MQTT events when an admin creates an announcement.\par
+- `backend/src/services/gmailAnnouncements.js` for publishing MQTT events when an announcement is ingested from Gmail.\par
+- `database/migrations/002_announcement_dispatch.sql` for the `mqtt_logs` table structure.\par
+\par
+\pard\b 4. MQTT Workflow\par
+\b0
+The MQTT flow in the system works as follows:\par
+1. An announcement is created by the admin or ingested from Gmail.\par
+2. The backend saves the announcement in the database.\par
+3. The backend publishes an MQTT message to the topic `scholarship_system/announcements/ingested`.\par
+4. The backend subscriber receives the same message from the broker.\par
+5. The system reads the announcement ID from the payload.\par
+6. The dispatch process starts and sends the announcement to the intended users.\par
+\par
+\pard\b 5. MQTT Message Format\par
+\b0
+The published MQTT message uses JSON format.\par
+\par
+Example payload:\par
+{\f1
+{\pard\li720 announcementId: 15\par}
+{\pard\li720 source: "admin"\par}
+{\pard\li720 ts: "2026-06-02T09:30:00.000Z"\par}
+}\f0
+\par
+\pard\b 6. MQTT Topic Used\par
+\b0
+The current topic used by the system is:\par
+`scholarship_system/announcements/ingested`\par
+\par
+This topic is built from the environment variable `MQTT_TOPIC_BASE` plus `/announcements/ingested`.\par
+\par
+\pard\b 7. MQTT Configuration\par
+\b0
+To enable MQTT, the backend uses environment variables. The important settings are:\par
+- `MQTT_ENABLED=true`\par
+- `MQTT_HOST=127.0.0.1`\par
+- `MQTT_PORT=1883`\par
+- `MQTT_TOPIC_BASE=scholarship_system`\par
+\par
+Optional settings:\par
+- `MQTT_URL`\par
+- `MQTT_USERNAME`\par
+- `MQTT_PASSWORD`\par
+- `MQTT_CLIENT_ID`\par
+\par
+\pard\b 8. Database Support\par
+\b0
+The system includes an `mqtt_logs` table to store MQTT-related event records. This table keeps the announcement ID, event type, payload data, and creation timestamp. It helps monitor MQTT activity inside the system.\par
+\par
+\pard\b 9. Benefits of the MQTT Implementation\par
+\b0
+The MQTT integration provides the following benefits:\par
+- Faster announcement event handling.\par
+- Better support for real-time processing.\par
+- Clear separation between announcement creation and dispatch.\par
+- Easier integration with other services in the future.\par
+- Better monitoring through stored MQTT logs.\par
+\par
+\pard\b 10. Conclusion\par
+\b0
+The MQTT implementation improves the Scholarship Tracking System by adding a real-time event-driven process for announcements. It makes the system more responsive, organized, and ready for future integrations while keeping the backend workflow simple.\par
+}

@@ -160,6 +160,10 @@ async function updateMe(req, res) {
         "UPDATE users SET email = ? WHERE student_id = ?",
         [email, studentId]
       );
+      await db.query(
+        "UPDATE students SET email = ? WHERE student_id = ?",
+        [email, studentId]
+      );
     }
 
     return res.json({

@@ -221,7 +221,8 @@ CREATE TABLE IF NOT EXISTS scholarship_announcements (
 
     source ENUM(
         'gmail',
-        'manual'
+        'manual',
+        'admin'
     ) NOT NULL DEFAULT 'gmail',
 
     gmail_message_id VARCHAR(128) NULL,
@@ -236,6 +237,10 @@ CREATE TABLE IF NOT EXISTS scholarship_announcements (
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
+    email_dispatched_at TIMESTAMP NULL,
+
+    dispatch_error TEXT NULL,
+
     UNIQUE KEY uq_gmail_message (gmail_message_id)
 
 );
@@ -245,15 +250,19 @@ CREATE TABLE IF NOT EXISTS scholarship_announcements (
 -- =========================================
 CREATE TABLE IF NOT EXISTS mqtt_logs (
 
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
 
-    topic VARCHAR(255),
+    announcement_id INT NULL,
 
-    payload TEXT,
+    event_type VARCHAR(120) NOT NULL,
 
-    status VARCHAR(100),
+    payload_json JSON NULL,
 
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX idx_mqtt_logs_announcement_id (announcement_id),
+
+    INDEX idx_mqtt_logs_event_type (event_type)
 );
 
 -- =========================================
@@ -267,6 +276,12 @@ ON attendance_logs(attendance_date);
 
 CREATE INDEX idx_risk_level
 ON forecasts(risk_level);
+
+CREATE INDEX idx_notifications_student_id
+ON notifications(student_id);
+
+CREATE INDEX idx_notifications_is_read
+ON notifications(is_read);
 
 -- =========================================
 -- TES + TDP PROGRAMS ONLY

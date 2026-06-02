@@ -7,6 +7,7 @@ async function addStudent(req, res) {
       award_number,
       qr_code,
       name,
+      email,
       course,
       year_level,
       scholarship_type,
@@ -20,17 +21,19 @@ async function addStudent(req, res) {
           award_number,
           qr_code,
           name,
+          email,
           course,
           year_level,
           scholarship_type
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         student_id,
         award_number,
         qr_code,
         name,
+        email || null,
         course,
         year_level,
         scholarship_type,
@@ -52,6 +55,7 @@ async function addGrantee(req, res) {
       award_number,
       qr_code,
       name,
+      email,
       course,
       year_level,
       scholarship_type,
@@ -73,17 +77,19 @@ async function addGrantee(req, res) {
           award_number,
           qr_code,
           name,
+          email,
           course,
           year_level,
           scholarship_type
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         student_id,
         award_number ?? null,
         qr_code ?? null,
         name,
+        email || null,
         course,
         year_level,
         scholarship_type,
@@ -123,6 +129,7 @@ async function updateStudent(req, res) {
       award_number,
       qr_code,
       name,
+      email,
       course,
       year_level,
       scholarship_type,
@@ -139,6 +146,7 @@ async function updateStudent(req, res) {
           award_number = COALESCE(?, award_number),
           qr_code = COALESCE(?, qr_code),
           name = COALESCE(?, name),
+          email = COALESCE(?, email),
           course = COALESCE(?, course),
           year_level = COALESCE(?, year_level),
           scholarship_type = COALESCE(?, scholarship_type),
@@ -151,6 +159,7 @@ async function updateStudent(req, res) {
         award_number || null,
         qr_code || null,
         name || null,
+        email || null,
         course || null,
         year_level || null,
         scholarship_type || null,

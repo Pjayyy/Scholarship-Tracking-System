@@ -11,8 +11,13 @@ import Forecast from "../pages/admin/Forecast";
 import Notifications from "../pages/admin/Notifications";
 import Analytics from "../pages/admin/Analytics";
 import AdminDocumentScan from "../pages/admin/AdminDocumentScan";
+import Announcements from "../pages/admin/Announcements";
+
+
 import Loading from "../components/feedback/Loading";
 import StudentPortal from "../pages/student/StudentPortal";
+
+
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -296,8 +301,13 @@ function PageTransition({ page, isAdmin, isStudent }) {
         {page === "qr" && isAdmin && <QRScanner />}
         {page === "forecast" && isAdmin && <Forecast />}
         {page === "notifications" && isAdmin && <Notifications />}
+        {page === "announcements" && isAdmin && <Announcements />}
         {page === "analytics" && isAdmin && <Analytics />}
+
+
         {isStudent && <StudentPortal page={page} />}
+
+
       </motion.div>
     </AnimatePresence>
   );

@@ -2,6 +2,8 @@ const mqtt = require("mqtt");
 
 let client = null;
 let ready = false;
+let subscribeHandlersRegistered = false;
+
 
 function isMqttEnabled() {
   return String(process.env.MQTT_ENABLED || "false").toLowerCase() === "true";
@@ -78,21 +80,29 @@ function publishAnnouncementIngested({ announcementId, source }) {
 function subscribeToAnnouncementIngested(onMessage) {
   if (!client) return false;
   const topic = `${getTopicBase()}/announcements/ingested`;
+
   client.subscribe(topic, { qos: 1 }, (err) => {
     if (err) console.error("MQTT subscribe failed:", err?.message || err);
   });
 
-  client.on("message", (t, buf) => {
-    if (t !== topic) return;
-    try {
-      const msg = JSON.parse(String(buf || ""));
-      onMessage?.(msg);
-    } catch (e) {
-      console.error("MQTT message parse failed:", e?.message || e);
-    }
-  });
+  // Ensure we don't register multiple 'message' handlers if subscribeTo... is called twice.
+  if (!subscribeHandlersRegistered) {
+    subscribeHandlersRegistered = true;
+
+    client.on("message", (t, buf) => {
+      if (t !== topic) return;
+      try {
+        const msg = JSON.parse(String(buf || ""));
+        onMessage?.(msg);
+      } catch (e) {
+        console.error("MQTT message parse failed:", e?.message || e);
+      }
+    });
+  }
+
   return true;
 }
+
 
 module.exports = {
   initMqtt,

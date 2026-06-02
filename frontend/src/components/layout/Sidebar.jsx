@@ -20,9 +20,11 @@ const adminNavItems = [
   { page: "document-scan", label: "Document scan", icon: FaCloudUploadAlt },
   { page: "qr", label: "QR Announcements", icon: FaQrcode },
   { page: "forecast", label: "Forecast", icon: FaChartLine },
-  { page: "notifications", label: "Announcements", icon: FaBullhorn },
+  { page: "announcements", label: "Announcements", icon: FaBullhorn },
   { page: "analytics", label: "Analytics", icon: FaRegChartBar },
 ];
+
+
 
 const studentNavItems = [
   { page: "student-dashboard", label: "Dashboard", icon: FaHome },

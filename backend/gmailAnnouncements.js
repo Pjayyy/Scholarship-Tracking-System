@@ -185,9 +185,27 @@ async function pollGmailAndIngest() {
       if (announcementId) {
         announcementEvents.emit("ingested", { announcementId, source: "gmail" });
         await dispatchAnnouncement({ announcementId });
-        // Optional: publish MQTT event for real-time portal integrations.
-        // Dispatch already happened above; MQTT is an extra signal for other clients.
-        publishAnnouncementIngested({ announcementId, source: "gmail" });
+
+        // End-to-end MQTT publish (best-effort): other services can trigger dispatch
+        // or react in real time.
+        try {
+          const published = publishAnnouncementIngested({
+            announcementId,
+            source: "gmail",
+          });
+          if (!published) {
+            // eslint-disable-next-line no-console
+            console.log(
+              "MQTT not publishing (MQTT_DISABLED or MQTT not ready)"
+            );
+          }
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.error(
+            "MQTT publishAnnouncementIngested failed:",
+            e?.message || e
+          );
+        }
       }
     } catch (e) {
       console.error(
@@ -195,6 +213,7 @@ async function pollGmailAndIngest() {
         e?.message || e
       );
     }
+
   }
 
   return { scanned: messages.length, inserted };

@@ -36,9 +36,11 @@ const studentsRoutes = require("./routes/students.routes.js");
 const attendanceRoutes = require("./routes/attendance.routes.js");
 const qrRoutes = require("./routes/qr.routes.js");
 const dashboardRoutes = require("./routes/dashboard.routes.js");
+const announcementAdminRoutes = require("./routes/announcementAdmin.routes.js");
 
 
 const app = express();
+
 
 
 
@@ -102,6 +104,8 @@ app.use("/students", studentsRoutes);
 app.use(attendanceRoutes);
 app.use(qrRoutes);
 app.use(dashboardRoutes);
+app.use(announcementAdminRoutes);
+
 
 /* =========================
    GLOBAL ERROR HANDLER

@@ -33,6 +33,10 @@ function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
 }
 
+function isDeliverableEmail(email) {
+  return email && !email.endsWith("@scholarship.local");
+}
+
 async function mapLimit(items, limit, fn) {
   const safeLimit = Math.max(1, Math.min(Number(limit) || 1, 25));
   const results = new Array(items.length);
@@ -103,7 +107,7 @@ async function dispatchAnnouncement({ announcementId }) {
     const emailSet = new Set();
     for (const r of [...portalStudents, ...userStudents]) {
       const e = normalizeEmail(r.email);
-      if (e) emailSet.add(e);
+      if (isDeliverableEmail(e)) emailSet.add(e);
     }
 
     const recipientEmails = Array.from(emailSet);
